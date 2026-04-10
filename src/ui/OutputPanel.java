@@ -1,4 +1,6 @@
 package ui;
 
-public class OutputPanel {
+import javax.swing.*;
+
+public class OutputPanel extends JPanel {
 }
