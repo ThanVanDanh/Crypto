@@ -1,67 +1,73 @@
 package model.classic;
 
+import common.AlphabetConstants;
+
 import java.security.SecureRandom;
 
 public class CaesarAlgorithm implements ClassicAlgorithm {
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    @Override
-    public String key() {
-        return "caesar";
+    public String encryptENG(String plaintext, String key) {
+        return handle(plaintext, parseKey(key), AlphabetConstants.ALPHABET_ENG);
     }
 
-    @Override
-    public String displayName() {
-        return "Caesar Cipher";
+    public String encryptVIE(String plaintext, String key) {
+        return handle(plaintext, parseKey(key), AlphabetConstants.ALPHABET_VIE);
     }
 
-    @Override
-    public String encrypt(String plaintext, String key) {
-        return transform(plaintext, parseShift(key));
+    public String decryptENG(String ciphertext, String key) {
+        return handle(ciphertext, -parseKey(key), AlphabetConstants.ALPHABET_ENG);
     }
 
-    @Override
-    public String decrypt(String ciphertext, String key) {
-        return transform(ciphertext, -parseShift(key));
+    public String decryptVIE(String ciphertext, String key) {
+        return handle(ciphertext, -parseKey(key), AlphabetConstants.ALPHABET_VIE);
     }
 
-    @Override
-    public String generateKey() {
-        return String.valueOf(RANDOM.nextInt(26));
-    }
-
-    @Override
-    public boolean isValidKey(String key) {
+    public boolean isValidKey(String key, String language) {
         try {
-            parseShift(key);
+            parseKey(key);
             return true;
         } catch (RuntimeException ex) {
             return false;
         }
     }
 
-    @Override
-    public String keyHint() {
+    public String keyHint(String language) {
         return "Khóa Caesar phải là số nguyên (ví dụ: 3, 11, -2).";
     }
 
-    private String transform(String input, int shift) {
-        StringBuilder out = new StringBuilder(input.length());
-        int normalized = Math.floorMod(shift, 26);
-        for (char ch : input.toCharArray()) {
-            if (Character.isUpperCase(ch)) {
-                out.append((char) ('A' + (ch - 'A' + normalized) % 26));
-            } else if (Character.isLowerCase(ch)) {
-                out.append((char) ('a' + (ch - 'a' + normalized) % 26));
+    public String genKey(String language) {
+        String alphabet = "VIE".equalsIgnoreCase(language)
+                ? AlphabetConstants.ALPHABET_VIE
+                : AlphabetConstants.ALPHABET_ENG;
+        return String.valueOf(RANDOM.nextInt(alphabet.length()));
+    }
+
+    private String handle(String input, int k, String alphabet) {
+        if (input == null) {
+            return null;
+        }
+        int n = alphabet.length();
+        StringBuilder sb = new StringBuilder(input.length());
+        for (char c : input.toCharArray()) {
+            int idx = alphabet.indexOf(c);
+            if (idx >= 0) {
+                sb.append(alphabet.charAt(((idx + k) % n + n) % n));
             } else {
-                out.append(ch);
+                sb.append(c);
             }
         }
-        return out.toString();
+        return sb.toString();
     }
 
-    private int parseShift(String key) {
-        return Integer.parseInt(key.trim());
+    private int parseKey(String key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key must not be null");
+        }
+        String trimmed = key.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("Key must not be empty");
+        }
+        return Integer.parseInt(trimmed);
     }
 }
-

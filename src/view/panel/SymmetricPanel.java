@@ -7,12 +7,12 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
-public class ClassicPanel extends JPanel {
+public class SymmetricPanel extends JPanel {
     private static final Font EDITOR_FONT = new Font(Font.MONOSPACED, Font.PLAIN, 13);
 
     private final JList<AlgorithmItem> algorithmList = new JList<>();
@@ -24,10 +24,10 @@ public class ClassicPanel extends JPanel {
     private final JButton generateButton = new JButton("Generate");
     private final JButton clearButton = new JButton("Clear");
     private final JComboBox<String> languageBox = new JComboBox<>(new String[]{"ENG", "VIE"});
-    private final JLabel optionTitleLabel = new JLabel("Option Deck");
-    private final Map<String, KeyAccessor> keyPanels = new LinkedHashMap<>();
+    private final JLabel optionTitleLabel = new JLabel("Key Options");
+    private final Map<String, SymmetricKeyView> keyPanels = new LinkedHashMap<>();
 
-    public ClassicPanel(List<AlgorithmItem> items) {
+    public SymmetricPanel(List<AlgorithmItem> items) {
         super(new BorderLayout(12, 0));
         setBorder(new EmptyBorder(4, 0, 0, 0));
 
@@ -37,7 +37,6 @@ public class ClassicPanel extends JPanel {
         outputArea.setWrapStyleWord(true);
         inputArea.setFont(EDITOR_FONT);
         outputArea.setFont(EDITOR_FONT);
-        languageBox.setSelectedItem("ENG");
 
         algorithmList.setListData(items.toArray(new AlgorithmItem[0]));
         algorithmList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -51,6 +50,7 @@ public class ClassicPanel extends JPanel {
         header.setOpaque(false);
         header.add(label, BorderLayout.WEST);
         header.add(languageBox, BorderLayout.EAST);
+        languageBox.setVisible(false);
         side.add(header, BorderLayout.NORTH);
         side.add(new JScrollPane(algorithmList), BorderLayout.CENTER);
         add(side, BorderLayout.WEST);
@@ -103,7 +103,9 @@ public class ClassicPanel extends JPanel {
         body.add(workspace, BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
 
-        registerKeyPanels();
+        registerKeyPanel("aes", new SymmetricKeyView("AES", new int[]{128, 192, 256}, 16));
+        registerKeyPanel("3des", new SymmetricKeyView("3DES", new int[]{112, 168}, 8));
+        registerKeyPanel("blowfish", new SymmetricKeyView("Blowfish", new int[]{128, 192, 256}, 8));
     }
 
     public JList<AlgorithmItem> getAlgorithmList() {
@@ -138,85 +140,38 @@ public class ClassicPanel extends JPanel {
         return clearButton;
     }
 
-    public String getSelectedLanguage() {
-        Object value = languageBox.getSelectedItem();
-        return value == null ? "ENG" : value.toString();
+    public String getKeyBase64(String algorithmKey) {
+        SymmetricKeyView panel = keyPanels.get(algorithmKey);
+        return panel == null ? "" : panel.getKeyBase64();
     }
 
-    public String getKeyFor(String algorithmKey) {
-        KeyAccessor panel = keyPanels.get(algorithmKey);
-        return panel == null ? "" : panel.getKey();
+    public String getIvBase64(String algorithmKey) {
+        SymmetricKeyView panel = keyPanels.get(algorithmKey);
+        return panel == null ? "" : panel.getIvBase64();
     }
 
-    public void setKeyFor(String algorithmKey, String key) {
-        KeyAccessor panel = keyPanels.get(algorithmKey);
+    public int getKeySizeBits(String algorithmKey) {
+        SymmetricKeyView panel = keyPanels.get(algorithmKey);
+        return panel == null ? 0 : panel.getSelectedKeySize();
+    }
+
+    public void setKeyBase64(String algorithmKey, String key) {
+        SymmetricKeyView panel = keyPanels.get(algorithmKey);
         if (panel != null) {
-            panel.setKey(key);
+            panel.setKeyBase64(key);
         }
     }
 
-    private void registerKeyPanels() {
-        JTextField caesarField = new JTextField("");
-        JPanel caesarPanel = new JPanel(new BorderLayout(0, 8));
-        caesarPanel.setOpaque(false);
-        caesarPanel.setBorder(new EmptyBorder(2, 2, 2, 2));
-        JPanel caesarGrid = new JPanel(new GridLayout(1, 1, 10, 10));
-        caesarGrid.setOpaque(false);
-        caesarGrid.add(field("Key", caesarField));
-        JLabel caesarHint = new JLabel("Nhập số nguyên, ví dụ: 3 hoặc -2");
-        caesarHint.setForeground(new Color(90, 90, 90));
-        caesarPanel.add(caesarGrid, BorderLayout.CENTER);
-        caesarPanel.add(caesarHint, BorderLayout.SOUTH);
-        registerKeyPanel("caesar", caesarPanel, () -> caesarField.getText().trim(), key -> caesarField.setText(key == null ? "" : key.trim()));
-
-        JTextField affineA = new JTextField("");
-        JTextField affineB = new JTextField("");
-        JPanel affinePanel = new JPanel(new BorderLayout(0, 8));
-        affinePanel.setOpaque(false);
-        affinePanel.setBorder(new EmptyBorder(2, 2, 2, 2));
-        JPanel affineGrid = new JPanel(new GridLayout(1, 2, 10, 10));
-        affineGrid.setOpaque(false);
-        affineGrid.add(field("a", affineA));
-        affineGrid.add(field("b", affineB));
-        JLabel affineHint = new JLabel("Nhập a,b (ví dụ: 5,8)");
-        affineHint.setForeground(new Color(90, 90, 90));
-        affinePanel.add(affineGrid, BorderLayout.CENTER);
-        affinePanel.add(affineHint, BorderLayout.SOUTH);
-        registerKeyPanel("affine", affinePanel, () -> {
-            String a = affineA.getText().trim();
-            String b = affineB.getText().trim();
-            if (a.isEmpty() && b.isEmpty()) {
-                return "";
-            }
-            return a + "," + b;
-        }, key -> {
-            if (key == null || key.isBlank()) {
-                affineA.setText("");
-                affineB.setText("");
-                return;
-            }
-            String[] parts = key.split(",");
-            affineA.setText(parts.length > 0 ? parts[0].trim() : "");
-            affineB.setText(parts.length > 1 ? parts[1].trim() : "");
-        });
-
-        JTextField vigenereField = new JTextField("");
-        JPanel vigenerePanel = new JPanel(new BorderLayout(0, 8));
-        vigenerePanel.setOpaque(false);
-        vigenerePanel.setBorder(new EmptyBorder(2, 2, 2, 2));
-        JPanel vigenereGrid = new JPanel(new GridLayout(1, 1, 10, 10));
-        vigenereGrid.setOpaque(false);
-        vigenereGrid.add(field("Key", vigenereField));
-        JLabel vigenereHint = new JLabel("Nhập chuỗi ký tự (ví dụ: KEY, hello)");
-        vigenereHint.setForeground(new Color(90, 90, 90));
-        vigenerePanel.add(vigenereGrid, BorderLayout.CENTER);
-        vigenerePanel.add(vigenereHint, BorderLayout.SOUTH);
-        registerKeyPanel("vigenere", vigenerePanel, () -> vigenereField.getText().trim(), key -> vigenereField.setText(key == null ? "" : key.trim()));
+    public void setIvBase64(String algorithmKey, String iv) {
+        SymmetricKeyView panel = keyPanels.get(algorithmKey);
+        if (panel != null) {
+            panel.setIvBase64(iv);
+        }
     }
 
-    private void registerKeyPanel(String algorithmKey, JComponent panel, Supplier<String> getter, java.util.function.Consumer<String> setter) {
-        keyPanels.put(algorithmKey, new KeyAccessor(getter, setter));
-        optionCards.add(panel, algorithmKey);
+    private void registerKeyPanel(String algorithmKey, SymmetricKeyView panel) {
+        keyPanels.put(algorithmKey, panel);
+        optionCards.add(panel.getPanel(), algorithmKey);
     }
 
     private JPanel editorCard(String title, JTextArea area) {
@@ -229,15 +184,6 @@ public class ClassicPanel extends JPanel {
         card.add(top, BorderLayout.NORTH);
         card.add(new JScrollPane(area), BorderLayout.CENTER);
         return card;
-    }
-
-    private JPanel field(String label, JComponent component) {
-        JPanel panel = new JPanel(new BorderLayout(0, 6));
-        panel.setOpaque(false);
-        JLabel l = new JLabel(label);
-        panel.add(l, BorderLayout.NORTH);
-        panel.add(component, BorderLayout.CENTER);
-        return panel;
     }
 
     private void configureButton(JButton button, Dimension size) {
@@ -253,21 +199,69 @@ public class ClassicPanel extends JPanel {
         return panel;
     }
 
-    private static final class KeyAccessor {
-        private final Supplier<String> getter;
-        private final java.util.function.Consumer<String> setter;
 
-        private KeyAccessor(Supplier<String> getter, java.util.function.Consumer<String> setter) {
-            this.getter = getter;
-            this.setter = setter;
+    private static final class SymmetricKeyView {
+        private final JPanel panel = new JPanel(new BorderLayout(0, 8));
+        private final JComboBox<Integer> keySizeBox;
+        private final JTextField keyField = new JTextField("");
+        private final JTextField ivField = new JTextField("");
+        private final int ivSizeBytes;
+
+        private SymmetricKeyView(String title, int[] keySizes, int ivSizeBytes) {
+            this.ivSizeBytes = ivSizeBytes;
+            panel.setOpaque(false);
+            panel.setBorder(new EmptyBorder(2, 2, 2, 2));
+
+            Integer[] sizes = Arrays.stream(keySizes).boxed().toArray(Integer[]::new);
+            keySizeBox = new JComboBox<>(sizes);
+            keySizeBox.setSelectedIndex(0);
+
+            JPanel grid = new JPanel(new GridLayout(2, 2, 10, 10));
+            grid.setOpaque(false);
+            grid.add(field("Key size (bits)", keySizeBox));
+            grid.add(field("Key (Base64)", keyField));
+            grid.add(field("IV size (bytes)", new JLabel(String.valueOf(ivSizeBytes))));
+            grid.add(field("IV (Base64)", ivField));
+
+            JLabel hint = new JLabel(title + " - Nhập key/IV dạng Base64 hoặc dùng Generate.");
+            hint.setForeground(new Color(90, 90, 90));
+
+            panel.add(grid, BorderLayout.CENTER);
+            panel.add(hint, BorderLayout.SOUTH);
         }
 
-        public String getKey() {
-            return getter.get();
+        public JPanel getPanel() {
+            return panel;
         }
 
-        public void setKey(String key) {
-            setter.accept(key);
+        public String getKeyBase64() {
+            return keyField.getText().trim();
+        }
+
+        public void setKeyBase64(String key) {
+            keyField.setText(key == null ? "" : key.trim());
+        }
+
+        public String getIvBase64() {
+            return ivField.getText().trim();
+        }
+
+        public void setIvBase64(String iv) {
+            ivField.setText(iv == null ? "" : iv.trim());
+        }
+
+        public int getSelectedKeySize() {
+            Integer value = (Integer) keySizeBox.getSelectedItem();
+            return value == null ? 0 : value;
+        }
+
+        private JPanel field(String label, JComponent component) {
+            JPanel panel = new JPanel(new BorderLayout(0, 6));
+            panel.setOpaque(false);
+            JLabel l = new JLabel(label);
+            panel.add(l, BorderLayout.NORTH);
+            panel.add(component, BorderLayout.CENTER);
+            return panel;
         }
     }
 }

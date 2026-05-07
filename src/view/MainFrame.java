@@ -6,14 +6,13 @@ import java.awt.*;
 import java.util.Map;
 
 public class MainFrame extends JFrame {
-    private JTabbedPane tabbedPane;
+    private final JTabbedPane tabbedPane = new JTabbedPane();
 
     public MainFrame() {
         super("Crypto Java Swing");
-        tabbedPane = new JTabbedPane();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1450, 920);
-        setMinimumSize(new Dimension(1180, 760));
+        setSize(1200, 600);
+        setMinimumSize(new Dimension(900, 450));
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         add(buildTabs(), BorderLayout.CENTER);
@@ -31,6 +30,7 @@ public class MainFrame extends JFrame {
             tabbedPane.addTab(entry.getKey(), entry.getValue());
         }
     }
+
     public void showMessage(String title, String message) {
         JOptionPane.showMessageDialog(this, message, title, JOptionPane.INFORMATION_MESSAGE);
     }

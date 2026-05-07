@@ -3,25 +3,30 @@ package model;
 public class AlgorithmItem {
     private final String key;
     private final String name;
-    private final boolean weak;
 
-    public AlgorithmItem(String key, String name, boolean weak) {
+    /**
+     * Tạo item hiển thị cho một thuật toán.
+     */
+    public AlgorithmItem(String key, String name) {
         this.key = key;
         this.name = name;
-        this.weak = weak;
     }
 
+    /**
+     * Trả về key định danh nội bộ của thuật toán.
+     */
     public String getKey() {
         return key;
     }
 
+    /**
+     * Trả về tên hiển thị của thuật toán.
+     */
     public String getName() {
         return name;
     }
 
-    public boolean isWeak() {
-        return weak;
-    }
+
 
     @Override
     public String toString() {

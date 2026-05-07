@@ -1,18 +1,13 @@
 package model.classic;
 
 public interface ClassicAlgorithm {
-    String key();
+    String encryptENG(String plaintext, String key);
 
-    String displayName();
+    String decryptENG(String ciphertext, String key);
 
-    String encrypt(String plaintext, String key);
+    String encryptVIE(String plaintext, String key);
 
-    String decrypt(String ciphertext, String key);
+    String decryptVIE(String ciphertext, String key);
 
-    String generateKey();
 
-    boolean isValidKey(String key);
-
-    String keyHint();
 }
-
