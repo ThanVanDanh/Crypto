@@ -67,9 +67,13 @@ public class CryptoController {
         bind(inputMap, actionMap, KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK), "secondary", () -> dispatch(tabTargets, TabActions::secondary));
         bind(inputMap, actionMap, KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.CTRL_DOWN_MASK), "generate", () -> dispatch(tabTargets, TabActions::generate));
         bind(inputMap, actionMap, KeyStroke.getKeyStroke(KeyEvent.VK_K, InputEvent.CTRL_DOWN_MASK), "clear", () -> dispatch(tabTargets, TabActions::clear));
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < frame.getTabbedPane().getTabCount(); i++) {
             final int index = i;
-            bind(inputMap, actionMap, KeyStroke.getKeyStroke(KeyEvent.VK_1 + i, InputEvent.CTRL_DOWN_MASK), "tab" + i, () -> frame.getTabbedPane().setSelectedIndex(index));
+            bind(inputMap, actionMap, KeyStroke.getKeyStroke(KeyEvent.VK_1 + i, InputEvent.CTRL_DOWN_MASK), "tab" + i, () -> {
+                if (index < frame.getTabbedPane().getTabCount()) {
+                    frame.getTabbedPane().setSelectedIndex(index);
+                }
+            });
         }
     }
 

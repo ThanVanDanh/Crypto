@@ -2,10 +2,8 @@ package controller;
 
 import common.CryptoUtils;
 import model.AlgorithmItem;
-import model.symmetric.AesCbcAlgorithm;
-import model.symmetric.BlowfishAlgorithm;
+import model.symmetric.JceSymmetricAlgorithm;
 import model.symmetric.SymmetricAlgorithm;
-import model.symmetric.TripleDesAlgorithm;
 import view.MainFrame;
 import view.panel.SymmetricPanel;
 
@@ -22,15 +20,32 @@ public class SymmetricController {
     private final MainFrame frame;
     private final SymmetricPanel panel;
     private final Map<String, SymmetricAlgorithm> algorithms = new LinkedHashMap<>();
+    private final Map<String, int[]> keySizesByAlgorithm = new LinkedHashMap<>();
+    private final Map<String, Integer> ivSizesByAlgorithm = new LinkedHashMap<>();
     private AlgorithmItem selected;
 
     public SymmetricController(MainFrame frame) {
         this.frame = frame;
         List<AlgorithmItem> items = new ArrayList<>();
-        register(items, "aes", "AES (CBC)", new AesCbcAlgorithm());
-        register(items, "3des", "3DES (CBC)", new TripleDesAlgorithm());
-        register(items, "blowfish", "Blowfish (CBC)", new BlowfishAlgorithm());
-        panel = new SymmetricPanel(items);
+        addJceSymmetricAlgorithm(items, "aes", "AES (CBC)", "AES/CBC/PKCS5Padding", "AES",
+                new int[]{128, 192, 256}, new int[]{16, 24, 32}, 16, JceSymmetricAlgorithm.PARAM_IV);
+        addJceSymmetricAlgorithm(items, "aes-gcm", "AES (GCM)", "AES/GCM/NoPadding", "AES",
+                new int[]{128, 192, 256}, new int[]{16, 24, 32}, 12, JceSymmetricAlgorithm.PARAM_GCM);
+        addJceSymmetricAlgorithm(items, "des", "DES (CBC)", "DES/CBC/PKCS5Padding", "DES",
+                new int[]{56}, new int[]{8}, 8, JceSymmetricAlgorithm.PARAM_IV);
+        addJceSymmetricAlgorithm(items, "3des", "3DES (CBC)", "DESede/CBC/PKCS5Padding", "DESede",
+                new int[]{168}, new int[]{24}, 8, JceSymmetricAlgorithm.PARAM_IV);
+        addJceSymmetricAlgorithm(items, "blowfish", "Blowfish (CBC)", "Blowfish/CBC/PKCS5Padding", "Blowfish",
+                new int[]{32, 64, 128, 192, 256, 448}, new int[]{4, 8, 16, 24, 32, 56}, 8, JceSymmetricAlgorithm.PARAM_IV);
+        addJceSymmetricAlgorithm(items, "rc2", "RC2 (CBC)", "RC2/CBC/PKCS5Padding", "RC2",
+                new int[]{40, 64, 128, 256}, new int[]{5, 8, 16, 32}, 8, JceSymmetricAlgorithm.PARAM_IV);
+        addJceSymmetricAlgorithm(items, "arcfour", "ARCFOUR / RC4", "ARCFOUR", "ARCFOUR",
+                new int[]{40, 128, 256}, new int[]{5, 16, 32}, 0, JceSymmetricAlgorithm.PARAM_NONE);
+        addJceSymmetricAlgorithm(items, "chacha20", "ChaCha20", "ChaCha20", "ChaCha20",
+                new int[]{256}, new int[]{32}, 12, JceSymmetricAlgorithm.PARAM_CHACHA20);
+        addJceSymmetricAlgorithm(items, "chacha20-poly1305", "ChaCha20-Poly1305", "ChaCha20-Poly1305", "ChaCha20",
+                new int[]{256}, new int[]{32}, 12, JceSymmetricAlgorithm.PARAM_IV);
+        panel = new SymmetricPanel(items, keySizesByAlgorithm, ivSizesByAlgorithm);
         bind();
     }
 
@@ -108,7 +123,7 @@ public class SymmetricController {
         }
         int keySizeBytes = algorithm.keySizeBytes(keySizeBits);
         byte[] key = CryptoUtils.randomBytes(keySizeBytes);
-        byte[] iv = CryptoUtils.randomBytes(algorithm.ivSizeBytes());
+        byte[] iv = algorithm.ivSizeBytes() == 0 ? new byte[0] : CryptoUtils.randomBytes(algorithm.ivSizeBytes());
         panel.setKeyBase64(selected.getKey(), CryptoUtils.toBase64(key));
         panel.setIvBase64(selected.getKey(), CryptoUtils.toBase64(iv));
     }
@@ -148,7 +163,7 @@ public class SymmetricController {
             frame.showMessage("Thiếu dữ liệu", "Vui lòng nhập key (Base64) hoặc Generate.");
             return null;
         }
-        if (ivBase64.isBlank()) {
+        if (algorithm.ivSizeBytes() > 0 && ivBase64.isBlank()) {
             frame.showMessage("Thiếu dữ liệu", "Vui lòng nhập IV (Base64) hoặc Generate.");
             return null;
         }
@@ -210,8 +225,26 @@ public class SymmetricController {
         swingWorker.execute();
     }
 
-    private void register(List<AlgorithmItem> items, String key, String displayName, SymmetricAlgorithm algorithm) {
+    private void addJceSymmetricAlgorithm(List<AlgorithmItem> items,
+                                          String key,
+                                          String displayName,
+                                          String transformation,
+                                          String keyAlgorithm,
+                                          int[] keySizes,
+                                          int[] keyBytes,
+                                          int ivSizeBytes,
+                                          String parameterType) {
+        if (!JceSymmetricAlgorithm.isAvailable(transformation)) {
+            return;
+        }
+        addSymmetricAlgorithm(items, key, displayName,
+                new JceSymmetricAlgorithm(transformation, keyAlgorithm, keySizes, keyBytes, ivSizeBytes, parameterType));
+    }
+
+    private void addSymmetricAlgorithm(List<AlgorithmItem> items, String key, String displayName, SymmetricAlgorithm algorithm) {
         algorithms.put(key, algorithm);
+        keySizesByAlgorithm.put(key, algorithm.supportedKeySizes());
+        ivSizesByAlgorithm.put(key, algorithm.ivSizeBytes());
         items.add(new AlgorithmItem(key, displayName));
     }
 

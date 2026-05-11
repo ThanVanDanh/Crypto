@@ -103,7 +103,7 @@ public class HashPanel extends JPanel {
         add(body, BorderLayout.CENTER);
 
         for (AlgorithmItem item : items) {
-            registerOptionPanel(item.getKey());
+            addOptionPanel(item.getKey());
         }
     }
 
@@ -145,7 +145,7 @@ public class HashPanel extends JPanel {
         return value == null ? "HEX" : value.toString();
     }
 
-    private void registerOptionPanel(String algorithmKey) {
+    private void addOptionPanel(String algorithmKey) {
         JPanel panel = new JPanel(new BorderLayout(0, 8));
         panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(2, 2, 2, 2));

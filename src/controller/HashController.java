@@ -8,10 +8,13 @@ import view.panel.HashPanel;
 import javax.swing.*;
 import java.awt.*;
 import java.security.MessageDigest;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 public class HashController {
@@ -23,10 +26,11 @@ public class HashController {
     public HashController(MainFrame frame) {
         this.frame = frame;
         List<AlgorithmItem> items = new ArrayList<>();
-        register(items, "md5", "MD5", "MD5");
-        register(items, "sha1", "SHA-1", "SHA-1");
-        register(items, "sha256", "SHA-256", "SHA-256");
-        register(items, "sha512", "SHA-512", "SHA-512");
+        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        names.addAll(Security.getAlgorithms("MessageDigest"));
+        for (String name : names) {
+            addHashAlgorithm(items, name, name, name);
+        }
         panel = new HashPanel(items);
         bind();
     }
@@ -148,7 +152,7 @@ public class HashController {
         swingWorker.execute();
     }
 
-    private void register(List<AlgorithmItem> items, String key, String displayName, String digestName) {
+    private void addHashAlgorithm(List<AlgorithmItem> items, String key, String displayName, String digestName) {
         digestNames.put(key, digestName);
         items.add(new AlgorithmItem(key, displayName));
     }

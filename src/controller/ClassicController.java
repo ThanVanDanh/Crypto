@@ -4,6 +4,8 @@ import model.AlgorithmItem;
 import model.classic.AffineAlgorithm;
 import model.classic.CaesarAlgorithm;
 import model.classic.ClassicAlgorithm;
+import model.classic.HillAlgorithm;
+import model.classic.SubstitutionAlgorithm;
 import model.classic.VigenereAlgorithm;
 import view.MainFrame;
 import view.panel.ClassicPanel;
@@ -32,10 +34,14 @@ public class ClassicController {
         List<AlgorithmItem> items = new ArrayList<>();
         CaesarAlgorithm caesar = new CaesarAlgorithm();
         AffineAlgorithm affine = new AffineAlgorithm();
+        HillAlgorithm hill = new HillAlgorithm();
+        SubstitutionAlgorithm substitution = new SubstitutionAlgorithm();
         VigenereAlgorithm vigenere = new VigenereAlgorithm();
-        register(items, "caesar", "Caesar Cipher", caesar, caesar::genKey, caesar::isValidKey, caesar::keyHint);
-        register(items, "affine", "Affine Cipher", affine, affine::genKey, affine::isValidKey, affine::keyHint);
-        register(items, "vigenere", "Vigenere Cipher", vigenere, vigenere::genKey, vigenere::isValidKey, vigenere::keyHint);
+        addClassicAlgorithm(items, "caesar", "Caesar Cipher", caesar, caesar::genKey, caesar::isValidKey, caesar::keyHint);
+        addClassicAlgorithm(items, "affine", "Affine Cipher", affine, affine::genKey, affine::isValidKey, affine::keyHint);
+        addClassicAlgorithm(items, "hill", "Hill Cipher", hill, hill::genKey, hill::isValidKey, hill::keyHint);
+        addClassicAlgorithm(items, "substitution", "Substitution Cipher", substitution, substitution::genKey, substitution::isValidKey, substitution::keyHint);
+        addClassicAlgorithm(items, "vigenere", "Vigenere Cipher", vigenere, vigenere::genKey, vigenere::isValidKey, vigenere::keyHint);
         panel = new ClassicPanel(items);
         bind();
     }
@@ -200,13 +206,13 @@ public class ClassicController {
         swingWorker.execute();
     }
 
-    private void register(List<AlgorithmItem> items,
-                          String key,
-                          String displayName,
-                          ClassicAlgorithm algorithm,
-                          Function<String, String> keyGenerator,
-                          BiPredicate<String, String> keyValidator,
-                          Function<String, String> keyHint) {
+    private void addClassicAlgorithm(List<AlgorithmItem> items,
+                                     String key,
+                                     String displayName,
+                                     ClassicAlgorithm algorithm,
+                                     Function<String, String> keyGenerator,
+                                     BiPredicate<String, String> keyValidator,
+                                     Function<String, String> keyHint) {
         algorithms.put(key, algorithm);
         items.add(new AlgorithmItem(key, displayName));
         if (keyGenerator != null) {

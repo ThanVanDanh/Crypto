@@ -27,7 +27,9 @@ public class SymmetricPanel extends JPanel {
     private final JLabel optionTitleLabel = new JLabel("Key Options");
     private final Map<String, SymmetricKeyView> keyPanels = new LinkedHashMap<>();
 
-    public SymmetricPanel(List<AlgorithmItem> items) {
+    public SymmetricPanel(List<AlgorithmItem> items,
+                          Map<String, int[]> keySizesByAlgorithm,
+                          Map<String, Integer> ivSizesByAlgorithm) {
         super(new BorderLayout(12, 0));
         setBorder(new EmptyBorder(4, 0, 0, 0));
 
@@ -103,9 +105,11 @@ public class SymmetricPanel extends JPanel {
         body.add(workspace, BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
 
-        registerKeyPanel("aes", new SymmetricKeyView("AES", new int[]{128, 192, 256}, 16));
-        registerKeyPanel("3des", new SymmetricKeyView("3DES", new int[]{112, 168}, 8));
-        registerKeyPanel("blowfish", new SymmetricKeyView("Blowfish", new int[]{128, 192, 256}, 8));
+        for (AlgorithmItem item : items) {
+            int[] keySizes = keySizesByAlgorithm.get(item.getKey());
+            Integer ivSize = ivSizesByAlgorithm.get(item.getKey());
+            addKeyPanel(item.getKey(), new SymmetricKeyView(item.getName(), keySizes, ivSize == null ? 0 : ivSize));
+        }
     }
 
     public JList<AlgorithmItem> getAlgorithmList() {
@@ -169,7 +173,7 @@ public class SymmetricPanel extends JPanel {
         }
     }
 
-    private void registerKeyPanel(String algorithmKey, SymmetricKeyView panel) {
+    private void addKeyPanel(String algorithmKey, SymmetricKeyView panel) {
         keyPanels.put(algorithmKey, panel);
         optionCards.add(panel.getPanel(), algorithmKey);
     }
@@ -212,18 +216,24 @@ public class SymmetricPanel extends JPanel {
             panel.setOpaque(false);
             panel.setBorder(new EmptyBorder(2, 2, 2, 2));
 
-            Integer[] sizes = Arrays.stream(keySizes).boxed().toArray(Integer[]::new);
+            Integer[] sizes = Arrays.stream(keySizes == null ? new int[0] : keySizes).boxed().toArray(Integer[]::new);
             keySizeBox = new JComboBox<>(sizes);
-            keySizeBox.setSelectedIndex(0);
+            if (sizes.length > 0) {
+                keySizeBox.setSelectedIndex(0);
+            }
 
             JPanel grid = new JPanel(new GridLayout(2, 2, 10, 10));
             grid.setOpaque(false);
             grid.add(field("Key size (bits)", keySizeBox));
             grid.add(field("Key (Base64)", keyField));
             grid.add(field("IV size (bytes)", new JLabel(String.valueOf(ivSizeBytes))));
-            grid.add(field("IV (Base64)", ivField));
+            ivField.setEnabled(ivSizeBytes > 0);
+            grid.add(field("IV / nonce (Base64)", ivField));
 
-            JLabel hint = new JLabel(title + " - Nhập key/IV dạng Base64 hoặc dùng Generate.");
+            JLabel hint = new JLabel(title + " - Nhap key/IV dang Base64 hoac dung Generate.");
+            if (ivSizeBytes == 0) {
+                hint.setText(title + " - Thuat toan nay khong can IV.");
+            }
             hint.setForeground(new Color(90, 90, 90));
 
             panel.add(grid, BorderLayout.CENTER);

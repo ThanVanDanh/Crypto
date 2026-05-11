@@ -103,7 +103,7 @@ public class ClassicPanel extends JPanel {
         body.add(workspace, BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
 
-        registerKeyPanels();
+        buildKeyPanels();
     }
 
     public JList<AlgorithmItem> getAlgorithmList() {
@@ -155,7 +155,7 @@ public class ClassicPanel extends JPanel {
         }
     }
 
-    private void registerKeyPanels() {
+    private void buildKeyPanels() {
         JTextField caesarField = new JTextField("");
         JPanel caesarPanel = new JPanel(new BorderLayout(0, 8));
         caesarPanel.setOpaque(false);
@@ -167,7 +167,7 @@ public class ClassicPanel extends JPanel {
         caesarHint.setForeground(new Color(90, 90, 90));
         caesarPanel.add(caesarGrid, BorderLayout.CENTER);
         caesarPanel.add(caesarHint, BorderLayout.SOUTH);
-        registerKeyPanel("caesar", caesarPanel, () -> caesarField.getText().trim(), key -> caesarField.setText(key == null ? "" : key.trim()));
+        addKeyPanel("caesar", caesarPanel, () -> caesarField.getText().trim(), key -> caesarField.setText(key == null ? "" : key.trim()));
 
         JTextField affineA = new JTextField("");
         JTextField affineB = new JTextField("");
@@ -182,7 +182,7 @@ public class ClassicPanel extends JPanel {
         affineHint.setForeground(new Color(90, 90, 90));
         affinePanel.add(affineGrid, BorderLayout.CENTER);
         affinePanel.add(affineHint, BorderLayout.SOUTH);
-        registerKeyPanel("affine", affinePanel, () -> {
+        addKeyPanel("affine", affinePanel, () -> {
             String a = affineA.getText().trim();
             String b = affineB.getText().trim();
             if (a.isEmpty() && b.isEmpty()) {
@@ -200,6 +200,34 @@ public class ClassicPanel extends JPanel {
             affineB.setText(parts.length > 1 ? parts[1].trim() : "");
         });
 
+        JTextField hillField = new JTextField("");
+        JPanel hillPanel = new JPanel(new BorderLayout(0, 8));
+        hillPanel.setOpaque(false);
+        hillPanel.setBorder(new EmptyBorder(2, 2, 2, 2));
+        JPanel hillGrid = new JPanel(new GridLayout(1, 1, 10, 10));
+        hillGrid.setOpaque(false);
+        hillGrid.add(field("Matrix 2x2", hillField));
+        JLabel hillHint = new JLabel("Nhap a,b,c,d (vi du: 3,3,2,5)");
+        hillHint.setForeground(new Color(90, 90, 90));
+        hillPanel.add(hillGrid, BorderLayout.CENTER);
+        hillPanel.add(hillHint, BorderLayout.SOUTH);
+        addKeyPanel("hill", hillPanel, () -> hillField.getText().trim(), key -> hillField.setText(key == null ? "" : key.trim()));
+
+        JTextArea substitutionArea = new JTextArea(3, 20);
+        substitutionArea.setLineWrap(true);
+        substitutionArea.setWrapStyleWord(true);
+        substitutionArea.setFont(EDITOR_FONT);
+        JPanel substitutionPanel = new JPanel(new BorderLayout(0, 8));
+        substitutionPanel.setOpaque(false);
+        substitutionPanel.setBorder(new EmptyBorder(2, 2, 2, 2));
+        substitutionPanel.add(field("Alphabet permutation", new JScrollPane(substitutionArea)), BorderLayout.CENTER);
+        JLabel substitutionHint = new JLabel("Dung Generate de tao khoa hoan vi nhanh hon.");
+        substitutionHint.setForeground(new Color(90, 90, 90));
+        substitutionPanel.add(substitutionHint, BorderLayout.SOUTH);
+        addKeyPanel("substitution", substitutionPanel,
+                () -> substitutionArea.getText().trim(),
+                key -> substitutionArea.setText(key == null ? "" : key.trim()));
+
         JTextField vigenereField = new JTextField("");
         JPanel vigenerePanel = new JPanel(new BorderLayout(0, 8));
         vigenerePanel.setOpaque(false);
@@ -211,10 +239,10 @@ public class ClassicPanel extends JPanel {
         vigenereHint.setForeground(new Color(90, 90, 90));
         vigenerePanel.add(vigenereGrid, BorderLayout.CENTER);
         vigenerePanel.add(vigenereHint, BorderLayout.SOUTH);
-        registerKeyPanel("vigenere", vigenerePanel, () -> vigenereField.getText().trim(), key -> vigenereField.setText(key == null ? "" : key.trim()));
+        addKeyPanel("vigenere", vigenerePanel, () -> vigenereField.getText().trim(), key -> vigenereField.setText(key == null ? "" : key.trim()));
     }
 
-    private void registerKeyPanel(String algorithmKey, JComponent panel, Supplier<String> getter, java.util.function.Consumer<String> setter) {
+    private void addKeyPanel(String algorithmKey, JComponent panel, Supplier<String> getter, java.util.function.Consumer<String> setter) {
         keyPanels.put(algorithmKey, new KeyAccessor(getter, setter));
         optionCards.add(panel, algorithmKey);
     }

@@ -31,7 +31,7 @@ public class AsymmetricController {
     public AsymmetricController(MainFrame frame) {
         this.frame = frame;
         List<AlgorithmItem> items = new ArrayList<>();
-        register(items, "rsa", "RSA", new RsaAlgorithm());
+        addAsymmetricAlgorithm(items, "rsa", "RSA", new RsaAlgorithm());
         panel = new AsymmetricPanel(items);
         bind();
     }
@@ -209,7 +209,7 @@ public class AsymmetricController {
         swingWorker.execute();
     }
 
-    private void register(List<AlgorithmItem> items, String key, String displayName, AsymmetricAlgorithm algorithm) {
+    private void addAsymmetricAlgorithm(List<AlgorithmItem> items, String key, String displayName, AsymmetricAlgorithm algorithm) {
         algorithms.put(key, algorithm);
         items.add(new AlgorithmItem(key, displayName));
     }

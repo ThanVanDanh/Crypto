@@ -102,7 +102,7 @@ public class AsymmetricPanel extends JPanel {
         body.add(workspace, BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
 
-        registerKeyPanel("rsa", new RsaKeyView(new int[]{2048, 3072, 4096}));
+        addKeyPanel("rsa", new RsaKeyView(new int[]{2048, 3072, 4096}));
     }
 
     public JList<AlgorithmItem> getAlgorithmList() {
@@ -166,7 +166,7 @@ public class AsymmetricPanel extends JPanel {
         }
     }
 
-    private void registerKeyPanel(String algorithmKey, RsaKeyView panel) {
+    private void addKeyPanel(String algorithmKey, RsaKeyView panel) {
         keyPanels.put(algorithmKey, panel);
         optionCards.add(panel.getPanel(), algorithmKey);
     }
