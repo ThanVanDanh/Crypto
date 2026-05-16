@@ -39,22 +39,6 @@ public class AsymmetricController {
         return panel;
     }
 
-    public void triggerPrimary() {
-        onPrimary();
-    }
-
-    public void triggerSecondary() {
-        onSecondary();
-    }
-
-    public void triggerGenerate() {
-        onGenerate();
-    }
-
-    public void triggerClear() {
-        onClear();
-    }
-
     private void bind() {
         panel.getPrimaryButton().addActionListener(e -> onPrimary());
         panel.getSecondaryButton().addActionListener(e -> onSecondary());
@@ -67,7 +51,7 @@ public class AsymmetricController {
         panel.getBrowseOutputFileButton().addActionListener(e -> chooseOutputFile());
         panel.getEncryptFileButton().addActionListener(e -> onEncryptFile());
         panel.getDecryptFileButton().addActionListener(e -> onDecryptFile());
-        panel.getSaveInputTextButton().addActionListener(e -> onSaveText("input.txt", panel.getInputArea().getText()));
+        panel.getSaveInputTextButton().addActionListener(e -> onImportInput());
         panel.getSaveOutputTextButton().addActionListener(e -> onSaveText("output.txt", panel.getOutputArea().getText()));
         panel.getAlgorithmList().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -85,7 +69,7 @@ public class AsymmetricController {
 
     private void onPrimary() {
         String input = panel.getInputArea().getText();
-        if (!requireInput(input, "Vui lòng nhập plaintext")) {
+        if (!requireInput(input, "Vui long nhap plaintext.")) {
             return;
         }
         RsaAlgorithm algorithm = currentAlgorithm();
@@ -99,7 +83,7 @@ public class AsymmetricController {
 
     private void onSecondary() {
         String input = panel.getInputArea().getText();
-        if (!requireInput(input, "Vui lòng nhập ciphertext (Base64)")) {
+        if (!requireInput(input, "Vui long nhap ciphertext (Base64).")) {
             return;
         }
         RsaAlgorithm algorithm = currentAlgorithm();
@@ -115,7 +99,7 @@ public class AsymmetricController {
         RsaAlgorithm algorithm = currentAlgorithm();
         int keySizeBits = panel.getKeySizeBits();
         if (!isSupportedKeySize(algorithm, keySizeBits)) {
-            frame.showMessage("Khóa không hợp lệ", "Kích thước key không được hỗ trợ.");
+            frame.showMessage("Khoa khong hop le", "Kich thuoc key khong duoc ho tro.");
             return;
         }
         try {
@@ -123,7 +107,7 @@ public class AsymmetricController {
             panel.setPublicKeyBase64(algorithm.getPublicKeyBase64());
             panel.setPrivateKeyBase64(algorithm.getPrivateKeyBase64());
         } catch (Exception ex) {
-            frame.showMessage("Lỗi", ex.getMessage());
+            frame.showMessage("Loi", ex.getMessage());
         }
     }
 
@@ -166,6 +150,13 @@ public class AsymmetricController {
 
     private void onSaveText(String defaultName, String content) {
         ControllerUtils.saveText(panel, frame, defaultName, content, "Khong co noi dung de luu.");
+    }
+
+    private void onImportInput() {
+        String content = ControllerUtils.openText(panel, frame);
+        if (content != null) {
+            panel.getInputArea().setText(content);
+        }
     }
 
     private void onClear() {
@@ -245,7 +236,7 @@ public class AsymmetricController {
     private RsaAlgorithm currentAlgorithm() {
         RsaAlgorithm algorithm = algorithms.get(selected.getKey());
         if (algorithm == null) {
-            throw new IllegalStateException("Chưa đăng ký thuật toán: " + selected.getKey());
+            throw new IllegalStateException("Chua dang ky thuat toan: " + selected.getKey());
         }
         return algorithm;
     }
@@ -253,7 +244,7 @@ public class AsymmetricController {
     private PublicKey readPublicKey() {
         String publicKeyBase64 = panel.getPublicKeyBase64();
         if (publicKeyBase64.isBlank()) {
-            frame.showMessage("Thiếu dữ liệu", "Vui lòng nhập public key (Base64) hoặc Generate.");
+            frame.showMessage("Thieu du lieu", "Vui long nhap public key (Base64) hoac Generate.");
             return null;
         }
         try {
@@ -261,7 +252,7 @@ public class AsymmetricController {
             KeyFactory factory = KeyFactory.getInstance("RSA");
             return factory.generatePublic(new X509EncodedKeySpec(decoded));
         } catch (Exception ex) {
-            frame.showMessage("Khóa không hợp lệ", "Public key không hợp lệ.");
+            frame.showMessage("Khoa khong hop le", "Public key khong hop le.");
             return null;
         }
     }
@@ -269,7 +260,7 @@ public class AsymmetricController {
     private PrivateKey readPrivateKey() {
         String privateKeyBase64 = panel.getPrivateKeyBase64();
         if (privateKeyBase64.isBlank()) {
-            frame.showMessage("Thiếu dữ liệu", "Vui lòng nhập private key (Base64) hoặc Generate.");
+            frame.showMessage("Thieu du lieu", "Vui long nhap private key (Base64) hoac Generate.");
             return null;
         }
         try {
@@ -277,7 +268,7 @@ public class AsymmetricController {
             KeyFactory factory = KeyFactory.getInstance("RSA");
             return factory.generatePrivate(new PKCS8EncodedKeySpec(decoded));
         } catch (Exception ex) {
-            frame.showMessage("Khóa không hợp lệ", "Private key không hợp lệ.");
+            frame.showMessage("Khoa khong hop le", "Private key khong hop le.");
             return null;
         }
     }
@@ -290,7 +281,7 @@ public class AsymmetricController {
         if (!input.isBlank()) {
             return true;
         }
-        frame.showMessage("Thiếu dữ liệu", message);
+        frame.showMessage("Thieu du lieu", message);
         return false;
     }
 
@@ -342,7 +333,7 @@ public class AsymmetricController {
                     panel.getOutputArea().setText(get());
                 } catch (Exception ex) {
                     panel.getOutputArea().setText("");
-                    JOptionPane.showMessageDialog(panel, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(panel, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
@@ -354,4 +345,3 @@ public class AsymmetricController {
         items.add(new AlgorithmItem(key, displayName));
     }
 }
-

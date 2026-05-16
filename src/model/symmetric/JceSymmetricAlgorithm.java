@@ -5,98 +5,87 @@ import common.CryptoUtils;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
-import javax.crypto.spec.ChaCha20ParameterSpec;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.spec.AlgorithmParameterSpec;
 
 public class JceSymmetricAlgorithm {
-    public static final String PARAM_NONE = "none";
-    public static final String PARAM_IV = "iv";
-    public static final String PARAM_GCM = "gcm";
-    public static final String PARAM_CHACHA20 = "chacha20";
-
-    private final String transformation;
     private final String keyAlgorithm;
     private final int[] keySizes;
     private final int[] keyBytes;
-    private final int ivSizeBytes;
-    private final String parameterType;
+    private String mode = "CBC";
+    private String padding = "PKCS5Padding";
     private byte[] currentKey;
-    private byte[] currentIv;
 
-    public JceSymmetricAlgorithm(String transformation,
-                                 String keyAlgorithm,
-                                 int[] keySizes,
-                                 int[] keyBytes,
-                                 int ivSizeBytes,
-                                 String parameterType) {
-        this.transformation = transformation;
+    public JceSymmetricAlgorithm(String keyAlgorithm, int[] keySizes, int[] keyBytes) {
         this.keyAlgorithm = keyAlgorithm;
         this.keySizes = keySizes.clone();
         this.keyBytes = keyBytes.clone();
-        this.ivSizeBytes = ivSizeBytes;
-        this.parameterType = parameterType;
     }
 
-    public void loadKey(byte[] key, byte[] iv) {
+    public void updateConfig(String mode, String padding) {
+        this.mode = mode;
+        this.padding = padding;
+    }
+
+    public void loadKey(byte[] key) {
         this.currentKey = key.clone();
-        this.currentIv = iv.clone();
     }
 
     public String encryptText(String plaintext) throws Exception {
-        return CryptoUtils.toBase64(encryptRaw(plaintext.getBytes(StandardCharsets.UTF_8)));
+        return CryptoUtils.toBase64(encryptBytes(plaintext.getBytes(StandardCharsets.UTF_8)));
     }
 
     public String decryptText(String ciphertextBase64) throws Exception {
-        byte[] plaintext = decryptRaw(CryptoUtils.fromBase64(ciphertextBase64));
+        byte[] plaintext = decryptBytes(CryptoUtils.fromBase64(ciphertextBase64));
         return new String(plaintext, StandardCharsets.UTF_8);
     }
 
-    private byte[] encryptRaw(byte[] plaintext) throws Exception {
-        Cipher cipher = Cipher.getInstance(transformation);
-        init(cipher, Cipher.ENCRYPT_MODE);
-        return cipher.doFinal(plaintext);
-    }
-
-    private byte[] decryptRaw(byte[] ciphertext) throws Exception {
-        Cipher cipher = Cipher.getInstance(transformation);
-        init(cipher, Cipher.DECRYPT_MODE);
-        return cipher.doFinal(ciphertext);
-    }
-
     public void encryptFile(String inputPath, String outputPath) throws Exception {
-        Cipher cipher = Cipher.getInstance(transformation);
-        init(cipher, Cipher.ENCRYPT_MODE);
+        Cipher cipher = Cipher.getInstance(getTransformation());
+        SecretKeySpec keySpec = keySpec();
         try (InputStream in = new BufferedInputStream(new FileInputStream(inputPath));
-             CipherOutputStream out = new CipherOutputStream(new BufferedOutputStream(new FileOutputStream(outputPath)), cipher)) {
-            processFile(in, out);
+             OutputStream fileOut = new BufferedOutputStream(new FileOutputStream(outputPath))) {
+            if (requiresIv(cipher)) {
+                byte[] iv = CryptoUtils.randomBytes(cipher.getBlockSize());
+                fileOut.write(iv);
+                cipher.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(iv));
+            } else {
+                cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+            }
+            try (CipherOutputStream out = new CipherOutputStream(fileOut, cipher)) {
+                processFile(in, out);
+            }
         }
     }
 
     public void decryptFile(String inputPath, String outputPath) throws Exception {
-        Cipher cipher = Cipher.getInstance(transformation);
-        init(cipher, Cipher.DECRYPT_MODE);
-        try (CipherInputStream in = new CipherInputStream(new BufferedInputStream(new FileInputStream(inputPath)), cipher);
+        Cipher cipher = Cipher.getInstance(getTransformation());
+        SecretKeySpec keySpec = keySpec();
+        try (DataInputStream fileIn = new DataInputStream(new BufferedInputStream(new FileInputStream(inputPath)));
              OutputStream out = new BufferedOutputStream(new FileOutputStream(outputPath))) {
-            processFile(in, out);
+            if (requiresIv(cipher)) {
+                byte[] iv = new byte[cipher.getBlockSize()];
+                fileIn.readFully(iv);
+                cipher.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(iv));
+            } else {
+                cipher.init(Cipher.DECRYPT_MODE, keySpec);
+            }
+            try (CipherInputStream in = new CipherInputStream(fileIn, cipher)) {
+                processFile(in, out);
+            }
         }
     }
 
     public int[] supportedKeySizes() {
         return keySizes.clone();
-    }
-
-    public int ivSizeBytes() {
-        return ivSizeBytes;
     }
 
     public int keySizeBytes(int keySizeBits) {
@@ -108,39 +97,74 @@ public class JceSymmetricAlgorithm {
         return keySizeBits / 8;
     }
 
-    public static boolean isAvailable(String transformation) {
+    public static boolean isAvailable(String keyAlgorithm) {
         try {
-            Cipher.getInstance(transformation);
+            Cipher.getInstance(keyAlgorithm + "/CBC/PKCS5Padding");
             return true;
         } catch (Exception ex) {
             return false;
         }
     }
 
-    private void init(Cipher cipher, int mode) throws Exception {
-        if (currentKey == null) {
-            throw new IllegalStateException("Chua nap key.");
-        }
-        SecretKeySpec keySpec = new SecretKeySpec(currentKey, keyAlgorithm);
-        AlgorithmParameterSpec parameterSpec = parameterSpec(currentIv);
-        if (parameterSpec == null) {
-            cipher.init(mode, keySpec);
-        } else {
-            cipher.init(mode, keySpec, parameterSpec);
+    public boolean isTransformationSupported(String mode, String padding) {
+        try {
+            Cipher.getInstance(keyAlgorithm + "/" + mode + "/" + padding);
+            return true;
+        } catch (Exception ex) {
+            return false;
         }
     }
 
-    private AlgorithmParameterSpec parameterSpec(byte[] iv) {
-        if (PARAM_IV.equals(parameterType)) {
-            return new IvParameterSpec(iv);
+    private byte[] encryptBytes(byte[] plaintext) throws Exception {
+        Cipher cipher = Cipher.getInstance(getTransformation());
+        SecretKeySpec keySpec = keySpec();
+        if (!requiresIv(cipher)) {
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+            return cipher.doFinal(plaintext);
         }
-        if (PARAM_GCM.equals(parameterType)) {
-            return new GCMParameterSpec(128, iv);
+
+        byte[] iv = CryptoUtils.randomBytes(cipher.getBlockSize());
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(iv));
+        byte[] ciphertext = cipher.doFinal(plaintext);
+        byte[] result = new byte[iv.length + ciphertext.length];
+        System.arraycopy(iv, 0, result, 0, iv.length);
+        System.arraycopy(ciphertext, 0, result, iv.length, ciphertext.length);
+        return result;
+    }
+
+    private byte[] decryptBytes(byte[] input) throws Exception {
+        Cipher cipher = Cipher.getInstance(getTransformation());
+        SecretKeySpec keySpec = keySpec();
+        if (!requiresIv(cipher)) {
+            cipher.init(Cipher.DECRYPT_MODE, keySpec);
+            return cipher.doFinal(input);
         }
-        if (PARAM_CHACHA20.equals(parameterType)) {
-            return new ChaCha20ParameterSpec(iv, 1);
+
+        int ivSize = cipher.getBlockSize();
+        if (input.length < ivSize) {
+            throw new IllegalArgumentException("Du lieu ma hoa khong hop le.");
         }
-        return null;
+        byte[] iv = new byte[ivSize];
+        byte[] ciphertext = new byte[input.length - ivSize];
+        System.arraycopy(input, 0, iv, 0, ivSize);
+        System.arraycopy(input, ivSize, ciphertext, 0, ciphertext.length);
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(iv));
+        return cipher.doFinal(ciphertext);
+    }
+
+    private SecretKeySpec keySpec() {
+        if (currentKey == null) {
+            throw new IllegalStateException("Chua nap key.");
+        }
+        return new SecretKeySpec(currentKey, keyAlgorithm);
+    }
+
+    private String getTransformation() {
+        return keyAlgorithm + "/" + mode + "/" + padding;
+    }
+
+    private boolean requiresIv(Cipher cipher) {
+        return !"ECB".equalsIgnoreCase(mode) && cipher.getBlockSize() > 0;
     }
 
     private void processFile(InputStream in, OutputStream out) throws Exception {

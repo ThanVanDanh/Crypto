@@ -25,7 +25,7 @@ public class SymmetricPanel extends JPanel {
     private final JButton saveKeyButton = new JButton("Save key");
     private final JButton importKeyButton = new JButton("Import key");
     private final JButton clearButton = new JButton("Clear");
-    private final JButton saveInputTextButton = new JButton("Save input");
+    private final JButton saveInputTextButton = new JButton("Import input");
     private final JButton saveOutputTextButton = new JButton("Save output");
     private final JTextField inputFileField = new JTextField();
     private final JTextField outputFileField = new JTextField();
@@ -37,9 +37,7 @@ public class SymmetricPanel extends JPanel {
     private final Map<String, SymmetricKeyView> keyPanels = new LinkedHashMap<>();
     private SymmetricKeyView currentKeyPanel;
 
-    public SymmetricPanel(List<AlgorithmItem> items,
-                          Map<String, int[]> keySizesByAlgorithm,
-                          Map<String, Integer> ivSizesByAlgorithm) {
+    public SymmetricPanel(List<AlgorithmItem> items, Map<String, int[]> keySizesByAlgorithm) {
         super(new BorderLayout(12, 0));
         setBorder(new EmptyBorder(4, 0, 0, 0));
 
@@ -117,8 +115,7 @@ public class SymmetricPanel extends JPanel {
 
         for (AlgorithmItem item : items) {
             int[] keySizes = keySizesByAlgorithm.get(item.getKey());
-            Integer ivSize = ivSizesByAlgorithm.get(item.getKey());
-            addKeyPanel(item.getKey(), new SymmetricKeyView(keySizes, ivSize == null ? 0 : ivSize));
+            addKeyPanel(item.getKey(), new SymmetricKeyView(keySizes));
         }
     }
 
@@ -204,23 +201,21 @@ public class SymmetricPanel extends JPanel {
         return currentKeyPanel == null ? "" : currentKeyPanel.getKeyBase64();
     }
 
-    public String getIvBase64() {
-        return currentKeyPanel == null ? "" : currentKeyPanel.getIvBase64();
-    }
-
     public int getKeySizeBits() {
         return currentKeyPanel == null ? 0 : currentKeyPanel.getSelectedKeySize();
+    }
+
+    public String getMode() {
+        return currentKeyPanel == null ? "CBC" : currentKeyPanel.getMode();
+    }
+
+    public String getPadding() {
+        return currentKeyPanel == null ? "PKCS5Padding" : currentKeyPanel.getPadding();
     }
 
     public void setKeyBase64(String key) {
         if (currentKeyPanel != null) {
             currentKeyPanel.setKeyBase64(key);
-        }
-    }
-
-    public void setIvBase64(String iv) {
-        if (currentKeyPanel != null) {
-            currentKeyPanel.setIvBase64(iv);
         }
     }
 
@@ -285,10 +280,11 @@ public class SymmetricPanel extends JPanel {
     private static final class SymmetricKeyView {
         private final JPanel panel = new JPanel(new BorderLayout(0, 8));
         private final JComboBox<Integer> keySizeBox;
+        private final JComboBox<String> modeBox = new JComboBox<>(new String[]{"CBC", "ECB", "CFB", "OFB", "CTR"});
+        private final JComboBox<String> paddingBox = new JComboBox<>(new String[]{"PKCS5Padding", "PKCS7Padding", "ISO10126Padding", "X923Padding", "NoPadding", "ZeroBytePadding"});
         private final JTextField keyField = new JTextField("");
-        private final JTextField ivField = new JTextField("");
 
-        private SymmetricKeyView(int[] keySizes, int ivSizeBytes) {
+        private SymmetricKeyView(int[] keySizes) {
             panel.setOpaque(false);
             panel.setBorder(new EmptyBorder(2, 2, 2, 2));
 
@@ -297,16 +293,17 @@ public class SymmetricPanel extends JPanel {
             if (sizes.length > 0) {
                 keySizeBox.setSelectedIndex(0);
             }
+            modeBox.addActionListener(e -> updatePaddingOptions());
 
             JPanel grid = new JPanel(new GridLayout(2, 2, 10, 10));
             grid.setOpaque(false);
             grid.add(field("Key size (bits)", keySizeBox));
+            grid.add(field("Mode", modeBox));
+            grid.add(field("Padding", paddingBox));
             grid.add(field("Key (Base64)", keyField));
-            grid.add(field("IV size (bytes)", new JLabel(String.valueOf(ivSizeBytes))));
-            ivField.setEnabled(ivSizeBytes > 0);
-            grid.add(field("IV / nonce (Base64)", ivField));
 
             panel.add(grid, BorderLayout.CENTER);
+            updatePaddingOptions();
         }
 
         public JPanel getPanel() {
@@ -321,17 +318,35 @@ public class SymmetricPanel extends JPanel {
             keyField.setText(key == null ? "" : key.trim());
         }
 
-        public String getIvBase64() {
-            return ivField.getText().trim();
-        }
-
-        public void setIvBase64(String iv) {
-            ivField.setText(iv == null ? "" : iv.trim());
-        }
-
         public int getSelectedKeySize() {
             Integer value = (Integer) keySizeBox.getSelectedItem();
             return value == null ? 0 : value;
+        }
+
+        public String getMode() {
+            Object value = modeBox.getSelectedItem();
+            return value == null ? "CBC" : value.toString();
+        }
+
+        public String getPadding() {
+            Object value = paddingBox.getSelectedItem();
+            return value == null ? "PKCS5Padding" : value.toString();
+        }
+
+        private void updatePaddingOptions() {
+            String selectedPadding = getPadding();
+            paddingBox.removeAllItems();
+            if ("CTR".equals(getMode())) {
+                paddingBox.addItem("NoPadding");
+                return;
+            }
+            paddingBox.addItem("PKCS5Padding");
+            paddingBox.addItem("PKCS7Padding");
+            paddingBox.addItem("ISO10126Padding");
+            paddingBox.addItem("X923Padding");
+            paddingBox.addItem("NoPadding");
+            paddingBox.addItem("ZeroBytePadding");
+            paddingBox.setSelectedItem(selectedPadding);
         }
 
         private JPanel field(String label, JComponent component) {

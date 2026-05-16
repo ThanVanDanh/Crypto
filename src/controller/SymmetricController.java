@@ -8,7 +8,6 @@ import view.MainFrame;
 import view.panel.SymmetricPanel;
 
 import javax.swing.*;
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -21,52 +20,37 @@ public class SymmetricController {
     private final SymmetricPanel panel;
     private final Map<String, JceSymmetricAlgorithm> algorithms = new LinkedHashMap<>();
     private final Map<String, int[]> keySizesByAlgorithm = new LinkedHashMap<>();
-    private final Map<String, Integer> ivSizesByAlgorithm = new LinkedHashMap<>();
     private AlgorithmItem selected;
 
     public SymmetricController(MainFrame frame) {
         this.frame = frame;
         List<AlgorithmItem> items = new ArrayList<>();
-        addJceSymmetricAlgorithm(items, "aes", "AES (CBC)", "AES/CBC/PKCS5Padding", "AES",
-                new int[]{128, 192, 256}, new int[]{16, 24, 32}, 16, JceSymmetricAlgorithm.PARAM_IV);
-        addJceSymmetricAlgorithm(items, "aes-gcm", "AES (GCM)", "AES/GCM/NoPadding", "AES",
-                new int[]{128, 192, 256}, new int[]{16, 24, 32}, 12, JceSymmetricAlgorithm.PARAM_GCM);
-        addJceSymmetricAlgorithm(items, "des", "DES (CBC)", "DES/CBC/PKCS5Padding", "DES",
-                new int[]{56}, new int[]{8}, 8, JceSymmetricAlgorithm.PARAM_IV);
-        addJceSymmetricAlgorithm(items, "3des", "3DES (CBC)", "DESede/CBC/PKCS5Padding", "DESede",
-                new int[]{168}, new int[]{24}, 8, JceSymmetricAlgorithm.PARAM_IV);
-        addJceSymmetricAlgorithm(items, "blowfish", "Blowfish (CBC)", "Blowfish/CBC/PKCS5Padding", "Blowfish",
-                new int[]{32, 64, 128, 192, 256, 448}, new int[]{4, 8, 16, 24, 32, 56}, 8, JceSymmetricAlgorithm.PARAM_IV);
-        addJceSymmetricAlgorithm(items, "rc2", "RC2 (CBC)", "RC2/CBC/PKCS5Padding", "RC2",
-                new int[]{40, 64, 128, 256}, new int[]{5, 8, 16, 32}, 8, JceSymmetricAlgorithm.PARAM_IV);
-        addJceSymmetricAlgorithm(items, "arcfour", "ARCFOUR / RC4", "ARCFOUR", "ARCFOUR",
-                new int[]{40, 128, 256}, new int[]{5, 16, 32}, 0, JceSymmetricAlgorithm.PARAM_NONE);
-        addJceSymmetricAlgorithm(items, "chacha20", "ChaCha20", "ChaCha20", "ChaCha20",
-                new int[]{256}, new int[]{32}, 12, JceSymmetricAlgorithm.PARAM_CHACHA20);
-        addJceSymmetricAlgorithm(items, "chacha20-poly1305", "ChaCha20-Poly1305", "ChaCha20-Poly1305", "ChaCha20",
-                new int[]{256}, new int[]{32}, 12, JceSymmetricAlgorithm.PARAM_IV);
-        panel = new SymmetricPanel(items, keySizesByAlgorithm, ivSizesByAlgorithm);
+        addJceSymmetricAlgorithm(items, "aes", "AES", "AES",
+                new int[]{128, 192, 256}, new int[]{16, 24, 32});
+        addJceSymmetricAlgorithm(items, "aria", "ARIA", "ARIA",
+                new int[]{128, 192, 256}, new int[]{16, 24, 32});
+        addJceSymmetricAlgorithm(items, "camellia", "Camellia", "Camellia",
+                new int[]{128, 192, 256}, new int[]{16, 24, 32});
+        addJceSymmetricAlgorithm(items, "cast5", "CAST5", "CAST5",
+                new int[]{40, 80, 128}, new int[]{5, 10, 16});
+        addJceSymmetricAlgorithm(items, "cast6", "CAST6", "CAST6",
+                new int[]{128, 192, 256}, new int[]{16, 24, 32});
+        addJceSymmetricAlgorithm(items, "serpent", "Serpent", "Serpent",
+                new int[]{128, 192, 256}, new int[]{16, 24, 32});
+        addJceSymmetricAlgorithm(items, "twofish", "Twofish", "Twofish",
+                new int[]{128, 192, 256}, new int[]{16, 24, 32});
+        addJceSymmetricAlgorithm(items, "blowfish", "Blowfish", "Blowfish",
+                new int[]{128, 256, 448}, new int[]{16, 32, 56});
+        addJceSymmetricAlgorithm(items, "des", "DES", "DES",
+                new int[]{56}, new int[]{8});
+        addJceSymmetricAlgorithm(items, "3des", "DESede", "DESede",
+                new int[]{112, 168}, new int[]{16, 24});
+        panel = new SymmetricPanel(items, keySizesByAlgorithm);
         bind();
     }
 
     public SymmetricPanel getPanel() {
         return panel;
-    }
-
-    public void triggerPrimary() {
-        onPrimary();
-    }
-
-    public void triggerSecondary() {
-        onSecondary();
-    }
-
-    public void triggerGenerate() {
-        onGenerate();
-    }
-
-    public void triggerClear() {
-        onClear();
     }
 
     private void bind() {
@@ -81,7 +65,7 @@ public class SymmetricController {
         panel.getBrowseOutputFileButton().addActionListener(e -> chooseOutputFile());
         panel.getEncryptFileButton().addActionListener(e -> onEncryptFile());
         panel.getDecryptFileButton().addActionListener(e -> onDecryptFile());
-        panel.getSaveInputTextButton().addActionListener(e -> onSaveText("input.txt", panel.getInputArea().getText()));
+        panel.getSaveInputTextButton().addActionListener(e -> onImportInput());
         panel.getSaveOutputTextButton().addActionListener(e -> onSaveText("output.txt", panel.getOutputArea().getText()));
         panel.getAlgorithmList().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -99,29 +83,37 @@ public class SymmetricController {
 
     private void onPrimary() {
         String input = panel.getInputArea().getText();
-        if (!requireInput(input, "Vui lòng nhập plaintext")) {
+        if (!requireInput(input, "Vui long nhap plaintext.")) {
             return;
         }
         JceSymmetricAlgorithm algorithm = currentAlgorithm();
+        if (!isTransformationSupported(algorithm)) {
+            return;
+        }
         KeyMaterial material = readKeyMaterial(algorithm);
         if (material == null) {
             return;
         }
-        algorithm.loadKey(material.key, material.iv);
+        algorithm.updateConfig(panel.getMode(), panel.getPadding());
+        algorithm.loadKey(material.key);
         runWorker(() -> algorithm.encryptText(input));
     }
 
     private void onSecondary() {
         String input = panel.getInputArea().getText();
-        if (!requireInput(input, "Vui lòng nhập ciphertext (Base64)")) {
+        if (!requireInput(input, "Vui long nhap ciphertext (Base64).")) {
             return;
         }
         JceSymmetricAlgorithm algorithm = currentAlgorithm();
+        if (!isTransformationSupported(algorithm)) {
+            return;
+        }
         KeyMaterial material = readKeyMaterial(algorithm);
         if (material == null) {
             return;
         }
-        algorithm.loadKey(material.key, material.iv);
+        algorithm.updateConfig(panel.getMode(), panel.getPadding());
+        algorithm.loadKey(material.key);
         runWorker(() -> algorithm.decryptText(input));
     }
 
@@ -129,14 +121,12 @@ public class SymmetricController {
         JceSymmetricAlgorithm algorithm = currentAlgorithm();
         int keySizeBits = panel.getKeySizeBits();
         if (!isSupportedKeySize(algorithm, keySizeBits)) {
-            frame.showMessage("Khóa không hợp lệ", "Kích thước key không được hỗ trợ.");
+            frame.showMessage("Khoa khong hop le", "Kich thuoc key khong duoc ho tro.");
             return;
         }
         int keySizeBytes = algorithm.keySizeBytes(keySizeBits);
         byte[] key = CryptoUtils.randomBytes(keySizeBytes);
-        byte[] iv = algorithm.ivSizeBytes() == 0 ? new byte[0] : CryptoUtils.randomBytes(algorithm.ivSizeBytes());
         panel.setKeyBase64(CryptoUtils.toBase64(key));
-        panel.setIvBase64(CryptoUtils.toBase64(iv));
     }
 
     private void onCopyKey() {
@@ -159,11 +149,17 @@ public class SymmetricController {
             return;
         }
         panel.setKeyBase64(lines.get(0));
-        panel.setIvBase64(lines.size() > 1 ? lines.get(1) : "");
     }
 
     private void onSaveText(String defaultName, String content) {
         ControllerUtils.saveText(panel, frame, defaultName, content, "Khong co noi dung de luu.");
+    }
+
+    private void onImportInput() {
+        String content = ControllerUtils.openText(panel, frame);
+        if (content != null) {
+            panel.getInputArea().setText(content);
+        }
     }
 
     private void onClear() {
@@ -202,11 +198,15 @@ public class SymmetricController {
             return;
         }
         JceSymmetricAlgorithm algorithm = currentAlgorithm();
+        if (!isTransformationSupported(algorithm)) {
+            return;
+        }
         KeyMaterial material = readKeyMaterial(algorithm);
         if (material == null) {
             return;
         }
-        algorithm.loadKey(material.key, material.iv);
+        algorithm.updateConfig(panel.getMode(), panel.getPadding());
+        algorithm.loadKey(material.key);
         runWorker(() -> {
             if (encrypt) {
                 algorithm.encryptFile(inputPath, outputPath);
@@ -237,40 +237,39 @@ public class SymmetricController {
     private JceSymmetricAlgorithm currentAlgorithm() {
         JceSymmetricAlgorithm algorithm = algorithms.get(selected.getKey());
         if (algorithm == null) {
-            throw new IllegalStateException("Chưa đăng ký thuật toán: " + selected.getKey());
+            throw new IllegalStateException("Chua dang ky thuat toan: " + selected.getKey());
         }
         return algorithm;
     }
 
+    private boolean isTransformationSupported(JceSymmetricAlgorithm algorithm) {
+        String mode = panel.getMode();
+        String padding = panel.getPadding();
+        if (algorithm.isTransformationSupported(mode, padding)) {
+            return true;
+        }
+        frame.showMessage("Khong ho tro", "Mode/padding khong duoc ho tro voi thuat toan da chon.");
+        return false;
+    }
+
     private KeyMaterial readKeyMaterial(JceSymmetricAlgorithm algorithm) {
         String keyBase64 = panel.getKeyBase64();
-        String ivBase64 = panel.getIvBase64();
         if (keyBase64.isBlank()) {
-            frame.showMessage("Thiếu dữ liệu", "Vui lòng nhập key (Base64) hoặc Generate.");
-            return null;
-        }
-        if (algorithm.ivSizeBytes() > 0 && ivBase64.isBlank()) {
-            frame.showMessage("Thiếu dữ liệu", "Vui lòng nhập IV (Base64) hoặc Generate.");
+            frame.showMessage("Thieu du lieu", "Vui long nhap key (Base64) hoac Generate.");
             return null;
         }
         byte[] key;
-        byte[] iv;
         try {
             key = CryptoUtils.fromBase64(keyBase64);
-            iv = CryptoUtils.fromBase64(ivBase64);
         } catch (IllegalArgumentException ex) {
-            frame.showMessage("Khóa không hợp lệ", "Key/IV phải là Base64 hợp lệ.");
+            frame.showMessage("Khoa khong hop le", "Key phai la Base64 hop le.");
             return null;
         }
         if (!isSupportedKeyLength(algorithm, key.length)) {
-            frame.showMessage("Khóa không hợp lệ", "Kích thước key không được hỗ trợ.");
+            frame.showMessage("Khoa khong hop le", "Kich thuoc key khong duoc ho tro.");
             return null;
         }
-        if (iv.length != algorithm.ivSizeBytes()) {
-            frame.showMessage("IV không hợp lệ", "IV phải có " + algorithm.ivSizeBytes() + " bytes.");
-            return null;
-        }
-        return new KeyMaterial(key, iv);
+        return new KeyMaterial(key);
     }
 
     private boolean isSupportedKeySize(JceSymmetricAlgorithm algorithm, int keySizeBits) {
@@ -287,21 +286,13 @@ public class SymmetricController {
         if (!input.isBlank()) {
             return true;
         }
-        frame.showMessage("Thiếu dữ liệu", message);
+        frame.showMessage("Thieu du lieu", message);
         return false;
     }
 
     private String currentKeyText() {
         String key = panel.getKeyBase64();
-        String iv = panel.getIvBase64();
-        if (key.isBlank() && iv.isBlank()) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder(key);
-        if (!iv.isBlank()) {
-            sb.append(System.lineSeparator()).append(iv);
-        }
-        return sb.toString();
+        return key.isBlank() ? "" : key;
     }
 
     private void runWorker(Callable<String> worker) {
@@ -317,7 +308,7 @@ public class SymmetricController {
                     panel.getOutputArea().setText(get());
                 } catch (Exception ex) {
                     panel.getOutputArea().setText("");
-                    JOptionPane.showMessageDialog(panel, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(panel, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
@@ -327,33 +318,24 @@ public class SymmetricController {
     private void addJceSymmetricAlgorithm(List<AlgorithmItem> items,
                                           String key,
                                           String displayName,
-                                          String transformation,
                                           String keyAlgorithm,
                                           int[] keySizes,
-                                          int[] keyBytes,
-                                          int ivSizeBytes,
-                                          String parameterType) {
-        if (!JceSymmetricAlgorithm.isAvailable(transformation)) {
-            return;
-        }
+                                          int[] keyBytes) {
         addSymmetricAlgorithm(items, key, displayName,
-                new JceSymmetricAlgorithm(transformation, keyAlgorithm, keySizes, keyBytes, ivSizeBytes, parameterType));
+                new JceSymmetricAlgorithm(keyAlgorithm, keySizes, keyBytes));
     }
 
     private void addSymmetricAlgorithm(List<AlgorithmItem> items, String key, String displayName, JceSymmetricAlgorithm algorithm) {
         algorithms.put(key, algorithm);
         keySizesByAlgorithm.put(key, algorithm.supportedKeySizes());
-        ivSizesByAlgorithm.put(key, algorithm.ivSizeBytes());
         items.add(new AlgorithmItem(key, displayName));
     }
 
     private static final class KeyMaterial {
         private final byte[] key;
-        private final byte[] iv;
 
-        private KeyMaterial(byte[] key, byte[] iv) {
+        private KeyMaterial(byte[] key) {
             this.key = key;
-            this.iv = iv;
         }
     }
 }

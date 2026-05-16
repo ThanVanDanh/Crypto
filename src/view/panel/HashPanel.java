@@ -18,12 +18,10 @@ public class HashPanel extends JPanel {
     private final JButton secondaryButton = new JButton("Secondary");
     private final JButton generateButton = new JButton("Generate");
     private final JButton clearButton = new JButton("Clear");
-    private final JButton saveInputTextButton = new JButton("Save input");
+    private final JButton saveInputTextButton = new JButton("Import input");
     private final JButton saveOutputTextButton = new JButton("Save output");
     private final JTextField inputFileField = new JTextField();
-    private final JTextField outputFileField = new JTextField();
     private final JButton browseInputFileButton = new JButton("Browse");
-    private final JButton browseOutputFileButton = new JButton("Browse");
     private final JButton hashFileButton = new JButton("Hash file");
 
     public HashPanel(List<AlgorithmItem> items) {
@@ -131,16 +129,8 @@ public class HashPanel extends JPanel {
         return inputFileField;
     }
 
-    public JTextField getOutputFileField() {
-        return outputFileField;
-    }
-
     public JButton getBrowseInputFileButton() {
         return browseInputFileButton;
-    }
-
-    public JButton getBrowseOutputFileButton() {
-        return browseOutputFileButton;
     }
 
     public JButton getHashFileButton() {
@@ -157,12 +147,10 @@ public class HashPanel extends JPanel {
         title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
 
         inputFileField.setEditable(false);
-        outputFileField.setEditable(false);
 
-        JPanel grid = new JPanel(new GridLayout(2, 1, 8, 8));
+        JPanel grid = new JPanel(new GridLayout(1, 1, 8, 8));
         grid.setOpaque(false);
         grid.add(field("Input file", PanelUtils.fileRow(inputFileField, browseInputFileButton)));
-        grid.add(field("Output file", PanelUtils.fileRow(outputFileField, browseOutputFileButton)));
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actions.setOpaque(false);

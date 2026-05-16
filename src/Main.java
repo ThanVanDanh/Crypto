@@ -10,8 +10,7 @@ public class Main {
 
     private static void start() {
         MainFrame frame = new MainFrame();
-        CryptoController controller = new CryptoController(frame);
-        controller.bind();
+        new CryptoController(frame);
         frame.setVisible(true);
     }
 }

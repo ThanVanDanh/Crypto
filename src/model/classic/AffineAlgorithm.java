@@ -108,7 +108,7 @@ public class AffineAlgorithm implements ClassicAlgorithm {
                 return x;
             }
         }
-        throw new IllegalArgumentException("Không có nghịch đảo mod " + m + " của " + a);
+        throw new IllegalArgumentException("Khong co nghich dao mod " + m + " cua " + a);
     }
 
     private int gcd(int a, int b) {

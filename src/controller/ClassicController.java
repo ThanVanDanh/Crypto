@@ -41,22 +41,6 @@ public class ClassicController {
         return panel;
     }
 
-    public void triggerPrimary() {
-        onPrimary();
-    }
-
-    public void triggerSecondary() {
-        onSecondary();
-    }
-
-    public void triggerGenerate() {
-        onGenerate();
-    }
-
-    public void triggerClear() {
-        onClear();
-    }
-
     private void bind() {
         panel.getPrimaryButton().addActionListener(e -> onPrimary());
         panel.getSecondaryButton().addActionListener(e -> onSecondary());
@@ -65,7 +49,7 @@ public class ClassicController {
         panel.getSaveKeyButton().addActionListener(e -> onSaveKey());
         panel.getImportKeyButton().addActionListener(e -> onImportKey());
         panel.getClearButton().addActionListener(e -> onClear());
-        panel.getSaveInputTextButton().addActionListener(e -> onSaveText("classic-input.txt", panel.getInputArea().getText()));
+        panel.getSaveInputTextButton().addActionListener(e -> onImportInput());
         panel.getSaveOutputTextButton().addActionListener(e -> onSaveText("classic-output.txt", panel.getOutputArea().getText()));
         panel.getAlgorithmList().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -134,6 +118,13 @@ public class ClassicController {
 
     private void onSaveText(String defaultName, String content) {
         ControllerUtils.saveText(panel, frame, defaultName, content, "Khong co noi dung de luu.");
+    }
+
+    private void onImportInput() {
+        String content = ControllerUtils.openText(panel, frame);
+        if (content != null) {
+            panel.getInputArea().setText(content);
+        }
     }
 
     private void onClear() {

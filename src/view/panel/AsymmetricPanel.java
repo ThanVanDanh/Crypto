@@ -22,7 +22,7 @@ public class AsymmetricPanel extends JPanel {
     private final JButton saveKeyButton = new JButton("Save key");
     private final JButton importKeyButton = new JButton("Import key");
     private final JButton clearButton = new JButton("Clear");
-    private final JButton saveInputTextButton = new JButton("Save input");
+    private final JButton saveInputTextButton = new JButton("Import input");
     private final JButton saveOutputTextButton = new JButton("Save output");
     private final JTextField inputFileField = new JTextField();
     private final JTextField outputFileField = new JTextField();

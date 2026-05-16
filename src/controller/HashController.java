@@ -1,18 +1,14 @@
 package controller;
 
 import common.ControllerUtils;
-import common.CryptoUtils;
 import model.AlgorithmItem;
 import model.hash.Hash;
 import view.MainFrame;
 import view.panel.HashPanel;
 
 import javax.swing.*;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 public class HashController {
@@ -24,9 +20,12 @@ public class HashController {
     public HashController(MainFrame frame) {
         this.frame = frame;
         List<AlgorithmItem> items = new ArrayList<>();
-        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        names.addAll(Security.getAlgorithms("MessageDigest"));
-        for (String name : names) {
+        String[] supported = new String[]{
+                "MD2", "MD5", "SHA-1", "SHA-224", "SHA-384", "SHA-256", "SHA-512",
+                "SHA-512/224", "SHA-512/256", "SHAKE128", "SHAKE256",
+                "BLAKE2B-512", "RIPEMD160", "Whirlpool"
+        };
+        for (String name : supported) {
             items.add(new AlgorithmItem(name, name));
         }
         panel = new HashPanel(items);
@@ -37,29 +36,12 @@ public class HashController {
         return panel;
     }
 
-    public void triggerPrimary() {
-        onPrimary();
-    }
-
-    public void triggerSecondary() {
-        onPrimary();
-    }
-
-    public void triggerGenerate() {
-        frame.showMessage("Khong ho tro", "Hash khong su dung key.");
-    }
-
-    public void triggerClear() {
-        onClear();
-    }
-
     private void bind() {
         panel.getPrimaryButton().addActionListener(e -> onPrimary());
         panel.getClearButton().addActionListener(e -> onClear());
         panel.getBrowseInputFileButton().addActionListener(e -> chooseInputFile());
-        panel.getBrowseOutputFileButton().addActionListener(e -> chooseOutputFile());
         panel.getHashFileButton().addActionListener(e -> onHashFile());
-        panel.getSaveInputTextButton().addActionListener(e -> onSaveText("input.txt", panel.getInputArea().getText()));
+        panel.getSaveInputTextButton().addActionListener(e -> onImportInput());
         panel.getSaveOutputTextButton().addActionListener(e -> onSaveText("hash-output.txt", panel.getOutputArea().getText()));
         panel.getAlgorithmList().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -87,7 +69,6 @@ public class HashController {
         panel.getInputArea().setText("");
         panel.getOutputArea().setText("");
         panel.getInputFileField().setText("");
-        panel.getOutputFileField().setText("");
     }
 
     private void chooseInputFile() {
@@ -97,28 +78,24 @@ public class HashController {
         }
     }
 
-    private void chooseOutputFile() {
-        String path = ControllerUtils.chooseSaveFile(panel, "hash-output.txt");
-        if (path != null) {
-            panel.getOutputFileField().setText(path);
-        }
-    }
-
     private void onHashFile() {
         String inputPath = panel.getInputFileField().getText();
-        String outputPath = panel.getOutputFileField().getText();
-        if (!ControllerUtils.requireFilePaths(frame, inputPath, outputPath)) {
+        if (inputPath == null || inputPath.isBlank()) {
+            frame.showMessage("Thieu du lieu", "Vui long chon input file.");
             return;
         }
-        runWorker(() -> {
-            String output = model.hashFile(inputPath, currentAlgorithm());
-            CryptoUtils.writeTextFile(outputPath, output);
-            return output;
-        });
+        runWorker(() -> model.hashFile(inputPath, currentAlgorithm()));
     }
 
     private void onSaveText(String defaultName, String content) {
         ControllerUtils.saveText(panel, frame, defaultName, content, "Khong co noi dung de luu.");
+    }
+
+    private void onImportInput() {
+        String content = ControllerUtils.openText(panel, frame);
+        if (content != null) {
+            panel.getInputArea().setText(content);
+        }
     }
 
     private void selectAlgorithm(AlgorithmItem item) {
