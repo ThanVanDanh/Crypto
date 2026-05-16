@@ -11,8 +11,8 @@ public class MainFrame extends JFrame {
     public MainFrame() {
         super("Crypto Java Swing");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 600);
-        setMinimumSize(new Dimension(900, 450));
+        setSize(1200, 700);
+        setMinimumSize(new Dimension(900, 525));
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         add(buildTabs(), BorderLayout.CENTER);

@@ -1,6 +1,10 @@
 package common;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -43,5 +47,28 @@ public class CryptoUtils {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+
+    public static byte[] readFile(String path) throws IOException {
+        return Files.readAllBytes(Path.of(path));
+    }
+
+    public static void writeFile(String path, byte[] data) throws IOException {
+        Files.write(Path.of(path), data == null ? new byte[0] : data);
+    }
+
+    public static void writeTextFile(String path, String content) throws IOException {
+        writeFile(path, utf8(content));
+    }
+
+    public static String readTextFile(String path) throws IOException {
+        return fromUtf8(readFile(path));
+    }
+
+    public static File withTxtExtension(File file) {
+        if (file == null || file.getName().toLowerCase().endsWith(".txt")) {
+            return file;
+        }
+        return new File(file.getParentFile(), file.getName() + ".txt");
     }
 }

@@ -1,18 +1,16 @@
 package controller;
 
+import common.ControllerUtils;
 import common.CryptoUtils;
 import model.AlgorithmItem;
+import model.hash.Hash;
 import view.MainFrame;
 import view.panel.HashPanel;
 
 import javax.swing.*;
-import java.awt.*;
-import java.security.MessageDigest;
 import java.security.Security;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -20,7 +18,7 @@ import java.util.concurrent.Callable;
 public class HashController {
     private final MainFrame frame;
     private final HashPanel panel;
-    private final Map<String, String> digestNames = new LinkedHashMap<>();
+    private final Hash model = new Hash();
     private AlgorithmItem selected;
 
     public HashController(MainFrame frame) {
@@ -29,7 +27,7 @@ public class HashController {
         Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         names.addAll(Security.getAlgorithms("MessageDigest"));
         for (String name : names) {
-            addHashAlgorithm(items, name, name, name);
+            items.add(new AlgorithmItem(name, name));
         }
         panel = new HashPanel(items);
         bind();
@@ -44,11 +42,11 @@ public class HashController {
     }
 
     public void triggerSecondary() {
-        onSecondary();
+        onPrimary();
     }
 
     public void triggerGenerate() {
-        onGenerate();
+        frame.showMessage("Khong ho tro", "Hash khong su dung key.");
     }
 
     public void triggerClear() {
@@ -57,9 +55,12 @@ public class HashController {
 
     private void bind() {
         panel.getPrimaryButton().addActionListener(e -> onPrimary());
-        panel.getSecondaryButton().addActionListener(e -> onSecondary());
-        panel.getGenerateButton().addActionListener(e -> onGenerate());
         panel.getClearButton().addActionListener(e -> onClear());
+        panel.getBrowseInputFileButton().addActionListener(e -> chooseInputFile());
+        panel.getBrowseOutputFileButton().addActionListener(e -> chooseOutputFile());
+        panel.getHashFileButton().addActionListener(e -> onHashFile());
+        panel.getSaveInputTextButton().addActionListener(e -> onSaveText("input.txt", panel.getInputArea().getText()));
+        panel.getSaveOutputTextButton().addActionListener(e -> onSaveText("hash-output.txt", panel.getOutputArea().getText()));
         panel.getAlgorithmList().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 AlgorithmItem item = panel.getAlgorithmList().getSelectedValue();
@@ -76,59 +77,67 @@ public class HashController {
 
     private void onPrimary() {
         String input = panel.getInputArea().getText();
-        if (!requireInput(input, "Vui lòng nhập dữ liệu để hash")) {
+        if (!requireInput(input, "Vui long nhap du lieu de hash.")) {
             return;
         }
-        runWorker(() -> hash(input));
-    }
-
-    private void onSecondary() {
-        onPrimary();
-    }
-
-    private void onGenerate() {
-        frame.showMessage("Không hỗ trợ", "Hash không hỗ trợ sinh key.");
+        runWorker(() -> model.checkSum(input, currentAlgorithm()));
     }
 
     private void onClear() {
         panel.getInputArea().setText("");
         panel.getOutputArea().setText("");
+        panel.getInputFileField().setText("");
+        panel.getOutputFileField().setText("");
+    }
+
+    private void chooseInputFile() {
+        String path = ControllerUtils.chooseOpenFile(panel);
+        if (path != null) {
+            panel.getInputFileField().setText(path);
+        }
+    }
+
+    private void chooseOutputFile() {
+        String path = ControllerUtils.chooseSaveFile(panel, "hash-output.txt");
+        if (path != null) {
+            panel.getOutputFileField().setText(path);
+        }
+    }
+
+    private void onHashFile() {
+        String inputPath = panel.getInputFileField().getText();
+        String outputPath = panel.getOutputFileField().getText();
+        if (!ControllerUtils.requireFilePaths(frame, inputPath, outputPath)) {
+            return;
+        }
+        runWorker(() -> {
+            String output = model.hashFile(inputPath, currentAlgorithm());
+            CryptoUtils.writeTextFile(outputPath, output);
+            return output;
+        });
+    }
+
+    private void onSaveText(String defaultName, String content) {
+        ControllerUtils.saveText(panel, frame, defaultName, content, "Khong co noi dung de luu.");
     }
 
     private void selectAlgorithm(AlgorithmItem item) {
         selected = item;
-        CardLayout cl = (CardLayout) panel.getOptionCards().getLayout();
-        cl.show(panel.getOptionCards(), item.getKey());
-        updateButtonLabels();
-    }
-
-    private void updateButtonLabels() {
         panel.getPrimaryButton().setText("Hash");
-        panel.getSecondaryButton().setText("Hash");
-        panel.getGenerateButton().setText("Generate key");
-        panel.getSecondaryButton().setEnabled(false);
-        panel.getGenerateButton().setEnabled(false);
     }
 
-    private String hash(String input) throws Exception {
-        String digestName = digestNames.get(selected.getKey());
-        if (digestName == null) {
-            throw new IllegalStateException("Chưa đăng ký thuật toán: " + selected.getKey());
+    private String currentAlgorithm() {
+        if (selected == null) {
+            throw new IllegalStateException("Chua chon thuat toan hash.");
         }
-        MessageDigest digest = MessageDigest.getInstance(digestName);
-        byte[] output = digest.digest(CryptoUtils.utf8(input));
-        String format = panel.getOutputFormat(selected.getKey());
-        if ("Base64".equalsIgnoreCase(format)) {
-            return CryptoUtils.toBase64(output);
-        }
-        return CryptoUtils.toHex(output);
+        return selected.getKey();
     }
 
     private boolean requireInput(String input, String message) {
         if (!input.isBlank()) {
             return true;
         }
-        frame.showMessage("Thiếu dữ liệu", message);
+        frame.showMessage("Thieu du lieu", message);
         return false;
     }
 
@@ -145,16 +154,10 @@ public class HashController {
                     panel.getOutputArea().setText(get());
                 } catch (Exception ex) {
                     panel.getOutputArea().setText("");
-                    JOptionPane.showMessageDialog(panel, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(panel, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
         swingWorker.execute();
     }
-
-    private void addHashAlgorithm(List<AlgorithmItem> items, String key, String displayName, String digestName) {
-        digestNames.put(key, digestName);
-        items.add(new AlgorithmItem(key, displayName));
-    }
 }
-

@@ -7,23 +7,23 @@ import java.security.SecureRandom;
 public class CaesarAlgorithm implements ClassicAlgorithm {
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    public String encryptENG(String plaintext, String key) {
-        return handle(plaintext, parseKey(key), AlphabetConstants.ALPHABET_ENG);
+    @Override
+    public String genKey(boolean isVN) {
+        return String.valueOf(RANDOM.nextInt(alphabetFor(isVN).length()));
     }
 
-    public String encryptVIE(String plaintext, String key) {
-        return handle(plaintext, parseKey(key), AlphabetConstants.ALPHABET_VIE);
+    @Override
+    public String encrypt(String text, String key, boolean isVN) {
+        return handle(text, parseKey(key), alphabetFor(isVN));
     }
 
-    public String decryptENG(String ciphertext, String key) {
-        return handle(ciphertext, -parseKey(key), AlphabetConstants.ALPHABET_ENG);
+    @Override
+    public String decrypt(String text, String key, boolean isVN) {
+        return handle(text, -parseKey(key), alphabetFor(isVN));
     }
 
-    public String decryptVIE(String ciphertext, String key) {
-        return handle(ciphertext, -parseKey(key), AlphabetConstants.ALPHABET_VIE);
-    }
-
-    public boolean isValidKey(String key, String language) {
+    @Override
+    public boolean isValidKey(String key, boolean isVN) {
         try {
             parseKey(key);
             return true;
@@ -32,15 +32,8 @@ public class CaesarAlgorithm implements ClassicAlgorithm {
         }
     }
 
-    public String keyHint(String language) {
-        return "Khóa Caesar phải là số nguyên (ví dụ: 3, 11, -2).";
-    }
-
-    public String genKey(String language) {
-        String alphabet = "VIE".equalsIgnoreCase(language)
-                ? AlphabetConstants.ALPHABET_VIE
-                : AlphabetConstants.ALPHABET_ENG;
-        return String.valueOf(RANDOM.nextInt(alphabet.length()));
+    private String alphabetFor(boolean isVN) {
+        return isVN ? AlphabetConstants.ALPHABET_VIE : AlphabetConstants.ALPHABET_ENG;
     }
 
     private String handle(String input, int k, String alphabet) {

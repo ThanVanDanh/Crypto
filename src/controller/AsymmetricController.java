@@ -1,8 +1,8 @@
 package controller;
 
+import common.ControllerUtils;
 import common.CryptoUtils;
 import model.AlgorithmItem;
-import model.asymmetric.AsymmetricAlgorithm;
 import model.asymmetric.RsaAlgorithm;
 import view.MainFrame;
 import view.panel.AsymmetricPanel;
@@ -10,7 +10,6 @@ import view.panel.AsymmetricPanel;
 import javax.swing.*;
 import java.awt.*;
 import java.security.KeyFactory;
-import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -25,7 +24,7 @@ import java.util.concurrent.Callable;
 public class AsymmetricController {
     private final MainFrame frame;
     private final AsymmetricPanel panel;
-    private final Map<String, AsymmetricAlgorithm> algorithms = new LinkedHashMap<>();
+    private final Map<String, RsaAlgorithm> algorithms = new LinkedHashMap<>();
     private AlgorithmItem selected;
 
     public AsymmetricController(MainFrame frame) {
@@ -60,7 +59,16 @@ public class AsymmetricController {
         panel.getPrimaryButton().addActionListener(e -> onPrimary());
         panel.getSecondaryButton().addActionListener(e -> onSecondary());
         panel.getGenerateButton().addActionListener(e -> onGenerate());
+        panel.getCopyKeyButton().addActionListener(e -> onCopyKey());
+        panel.getSaveKeyButton().addActionListener(e -> onSaveKey());
+        panel.getImportKeyButton().addActionListener(e -> onImportKey());
         panel.getClearButton().addActionListener(e -> onClear());
+        panel.getBrowseInputFileButton().addActionListener(e -> chooseInputFile());
+        panel.getBrowseOutputFileButton().addActionListener(e -> chooseOutputFile());
+        panel.getEncryptFileButton().addActionListener(e -> onEncryptFile());
+        panel.getDecryptFileButton().addActionListener(e -> onDecryptFile());
+        panel.getSaveInputTextButton().addActionListener(e -> onSaveText("input.txt", panel.getInputArea().getText()));
+        panel.getSaveOutputTextButton().addActionListener(e -> onSaveText("output.txt", panel.getOutputArea().getText()));
         panel.getAlgorithmList().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 AlgorithmItem item = panel.getAlgorithmList().getSelectedValue();
@@ -80,12 +88,13 @@ public class AsymmetricController {
         if (!requireInput(input, "Vui lòng nhập plaintext")) {
             return;
         }
-        AsymmetricAlgorithm algorithm = currentAlgorithm();
+        RsaAlgorithm algorithm = currentAlgorithm();
         PublicKey publicKey = readPublicKey();
         if (publicKey == null) {
             return;
         }
-        runWorker(() -> algorithm.encrypt(input, publicKey));
+        algorithm.setPublicKey(publicKey);
+        runWorker(() -> algorithm.encryptBase64(input));
     }
 
     private void onSecondary() {
@@ -93,39 +102,132 @@ public class AsymmetricController {
         if (!requireInput(input, "Vui lòng nhập ciphertext (Base64)")) {
             return;
         }
-        AsymmetricAlgorithm algorithm = currentAlgorithm();
+        RsaAlgorithm algorithm = currentAlgorithm();
         PrivateKey privateKey = readPrivateKey();
         if (privateKey == null) {
             return;
         }
-        runWorker(() -> algorithm.decrypt(input, privateKey));
+        algorithm.setPrivateKey(privateKey);
+        runWorker(() -> algorithm.decrypt(input));
     }
 
     private void onGenerate() {
-        AsymmetricAlgorithm algorithm = currentAlgorithm();
-        int keySizeBits = panel.getKeySizeBits(selected.getKey());
+        RsaAlgorithm algorithm = currentAlgorithm();
+        int keySizeBits = panel.getKeySizeBits();
         if (!isSupportedKeySize(algorithm, keySizeBits)) {
             frame.showMessage("Khóa không hợp lệ", "Kích thước key không được hỗ trợ.");
             return;
         }
         try {
-            KeyPair keyPair = algorithm.generateKeyPair(keySizeBits);
-            panel.setPublicKeyBase64(selected.getKey(), CryptoUtils.toBase64(keyPair.getPublic().getEncoded()));
-            panel.setPrivateKeyBase64(selected.getKey(), CryptoUtils.toBase64(keyPair.getPrivate().getEncoded()));
+            algorithm.genKeyPair(keySizeBits);
+            panel.setPublicKeyBase64(algorithm.getPublicKeyBase64());
+            panel.setPrivateKeyBase64(algorithm.getPrivateKeyBase64());
         } catch (Exception ex) {
             frame.showMessage("Lỗi", ex.getMessage());
         }
     }
 
+    private void onCopyKey() {
+        ControllerUtils.copyText(frame, currentKeyText(), "Vui long tao hoac nhap key truoc.");
+    }
+
+    private void onSaveKey() {
+        ControllerUtils.saveText(panel, frame, selected.getKey() + "-key.txt",
+                currentKeyText(), "Vui long tao hoac nhap key truoc.");
+    }
+
+    private void onImportKey() {
+        String content = ControllerUtils.openText(panel, frame);
+        if (content == null) {
+            return;
+        }
+        List<String> lines = ControllerUtils.textLines(content);
+        if (lines.isEmpty()) {
+            frame.showMessage("Thieu du lieu", "File key dang rong.");
+            return;
+        }
+        if (lines.size() > 1) {
+            panel.setPublicKeyBase64(lines.get(0));
+            panel.setPrivateKeyBase64(lines.get(1));
+            return;
+        }
+
+        String key = lines.get(0);
+        if (isPublicKeyText(key)) {
+            panel.setPublicKeyBase64(key);
+            panel.setPrivateKeyBase64("");
+        } else if (isPrivateKeyText(key)) {
+            panel.setPublicKeyBase64("");
+            panel.setPrivateKeyBase64(key);
+        } else {
+            frame.showMessage("Khoa khong hop le", "File key khong dung dinh dang RSA.");
+        }
+    }
+
+    private void onSaveText(String defaultName, String content) {
+        ControllerUtils.saveText(panel, frame, defaultName, content, "Khong co noi dung de luu.");
+    }
+
     private void onClear() {
         panel.getInputArea().setText("");
         panel.getOutputArea().setText("");
+        panel.getInputFileField().setText("");
+        panel.getOutputFileField().setText("");
+    }
+
+    private void chooseInputFile() {
+        String path = ControllerUtils.chooseOpenFile(panel);
+        if (path != null) {
+            panel.getInputFileField().setText(path);
+        }
+    }
+
+    private void chooseOutputFile() {
+        String path = ControllerUtils.chooseSaveFile(panel, null);
+        if (path != null) {
+            panel.getOutputFileField().setText(path);
+        }
+    }
+
+    private void onEncryptFile() {
+        String inputPath = panel.getInputFileField().getText();
+        String outputPath = panel.getOutputFileField().getText();
+        if (!ControllerUtils.requireFilePaths(frame, inputPath, outputPath)) {
+            return;
+        }
+        RsaAlgorithm algorithm = currentAlgorithm();
+        PublicKey publicKey = readPublicKey();
+        if (publicKey == null) {
+            return;
+        }
+        algorithm.setPublicKey(publicKey);
+        runWorker(() -> {
+            algorithm.encryptFile(inputPath, outputPath);
+            return outputPath;
+        });
+    }
+
+    private void onDecryptFile() {
+        String inputPath = panel.getInputFileField().getText();
+        String outputPath = panel.getOutputFileField().getText();
+        if (!ControllerUtils.requireFilePaths(frame, inputPath, outputPath)) {
+            return;
+        }
+        RsaAlgorithm algorithm = currentAlgorithm();
+        PrivateKey privateKey = readPrivateKey();
+        if (privateKey == null) {
+            return;
+        }
+        algorithm.setPrivateKey(privateKey);
+        runWorker(() -> {
+            algorithm.decryptFile(inputPath, outputPath);
+            return outputPath;
+        });
     }
 
     private void selectAlgorithm(AlgorithmItem item) {
         selected = item;
-        CardLayout cl = (CardLayout) panel.getOptionCards().getLayout();
-        cl.show(panel.getOptionCards(), item.getKey());
+        panel.showOptions(item.getKey());
         updateButtonLabels();
     }
 
@@ -133,12 +235,15 @@ public class AsymmetricController {
         panel.getPrimaryButton().setText("Encrypt");
         panel.getSecondaryButton().setText("Decrypt");
         panel.getGenerateButton().setText("Generate key");
+        panel.getCopyKeyButton().setEnabled(true);
+        panel.getSaveKeyButton().setEnabled(true);
+        panel.getImportKeyButton().setEnabled(true);
         panel.getGenerateButton().setEnabled(true);
         panel.getSecondaryButton().setEnabled(true);
     }
 
-    private AsymmetricAlgorithm currentAlgorithm() {
-        AsymmetricAlgorithm algorithm = algorithms.get(selected.getKey());
+    private RsaAlgorithm currentAlgorithm() {
+        RsaAlgorithm algorithm = algorithms.get(selected.getKey());
         if (algorithm == null) {
             throw new IllegalStateException("Chưa đăng ký thuật toán: " + selected.getKey());
         }
@@ -146,7 +251,7 @@ public class AsymmetricController {
     }
 
     private PublicKey readPublicKey() {
-        String publicKeyBase64 = panel.getPublicKeyBase64(selected.getKey());
+        String publicKeyBase64 = panel.getPublicKeyBase64();
         if (publicKeyBase64.isBlank()) {
             frame.showMessage("Thiếu dữ liệu", "Vui lòng nhập public key (Base64) hoặc Generate.");
             return null;
@@ -162,7 +267,7 @@ public class AsymmetricController {
     }
 
     private PrivateKey readPrivateKey() {
-        String privateKeyBase64 = panel.getPrivateKeyBase64(selected.getKey());
+        String privateKeyBase64 = panel.getPrivateKeyBase64();
         if (privateKeyBase64.isBlank()) {
             frame.showMessage("Thiếu dữ liệu", "Vui lòng nhập private key (Base64) hoặc Generate.");
             return null;
@@ -177,7 +282,7 @@ public class AsymmetricController {
         }
     }
 
-    private boolean isSupportedKeySize(AsymmetricAlgorithm algorithm, int keySizeBits) {
+    private boolean isSupportedKeySize(RsaAlgorithm algorithm, int keySizeBits) {
         return Arrays.stream(algorithm.supportedKeySizes()).anyMatch(size -> size == keySizeBits);
     }
 
@@ -187,6 +292,41 @@ public class AsymmetricController {
         }
         frame.showMessage("Thiếu dữ liệu", message);
         return false;
+    }
+
+    private String currentKeyText() {
+        String publicKey = panel.getPublicKeyBase64();
+        String privateKey = panel.getPrivateKeyBase64();
+        if (publicKey.isBlank() && privateKey.isBlank()) {
+            return "";
+        }
+        if (publicKey.isBlank()) {
+            return privateKey;
+        }
+        if (privateKey.isBlank()) {
+            return publicKey;
+        }
+        return publicKey + System.lineSeparator() + privateKey;
+    }
+
+    private boolean isPublicKeyText(String key) {
+        try {
+            byte[] decoded = CryptoUtils.fromBase64(key);
+            KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(decoded));
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    private boolean isPrivateKeyText(String key) {
+        try {
+            byte[] decoded = CryptoUtils.fromBase64(key);
+            KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(decoded));
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     private void runWorker(Callable<String> worker) {
@@ -209,7 +349,7 @@ public class AsymmetricController {
         swingWorker.execute();
     }
 
-    private void addAsymmetricAlgorithm(List<AlgorithmItem> items, String key, String displayName, AsymmetricAlgorithm algorithm) {
+    private void addAsymmetricAlgorithm(List<AlgorithmItem> items, String key, String displayName, RsaAlgorithm algorithm) {
         algorithms.put(key, algorithm);
         items.add(new AlgorithmItem(key, displayName));
     }

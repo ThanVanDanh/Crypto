@@ -8,8 +8,17 @@ Simple Swing app for classic, symmetric, asymmetric, and hash demos.
 - Asymmetric: RSA (Base64 public/private keys)
 - Hash: all MessageDigest algorithms reported by the current JDK provider
 
+## Features
+- Encrypt/decrypt text in Classic, Symmetric, and Asymmetric tabs.
+- Hash text and files in the Hash tab.
+- Encrypt/decrypt files in Symmetric and Asymmetric tabs.
+- Copy keys and save keys to `.txt` files.
+- Save text input/output to `.txt` files.
+
 ## Notes
 - Use Generate key for supported sizes.
 - Symmetric expects Base64 key and Base64 IV/nonce when the algorithm needs one.
-- Asymmetric expects Base64 keys.
-- RSA is for short text only. Longer data should be encrypted by a symmetric algorithm, then protect the symmetric key with RSA.
+- Asymmetric expects Base64 public/private keys.
+- RSA text encryption is for short text only.
+- RSA file encryption uses a hybrid design: RSA protects a random AES key and IV, while AES encrypts the file content.
+- Hill 2x2 adds one padding character when plaintext has an odd number of supported alphabet characters.

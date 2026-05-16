@@ -17,15 +17,17 @@ public class AffineAlgorithm implements ClassicAlgorithm {
         return new int[] { a, b };
     }
 
-    public String genKey(String language) {
-        int[] key = genKey(alphabetFor(language).length());
-        return key[0] + "," + key[1];
+    @Override
+    public String genKey(boolean isVN) {
+        int[] key = genKey(alphabetFor(isVN).length());
+        return key[0] + " " + key[1];
     }
 
-    public boolean isValidKey(String key, String language) {
+    @Override
+    public boolean isValidKey(String key, boolean isVN) {
         try {
             int[] ab = parseKey(key);
-            int n = alphabetFor(language).length();
+            int n = alphabetFor(isVN).length();
             int a = ab[0];
             if (a <= 0 || a >= n) {
                 return false;
@@ -36,32 +38,19 @@ public class AffineAlgorithm implements ClassicAlgorithm {
         }
     }
 
-    public String keyHint(String language) {
-        int n = alphabetFor(language).length();
-        return "Khóa Affine có dạng a,b với gcd(a," + n + ") = 1 (ví dụ: 5,8).";
+
+    @Override
+    public String encrypt(String text, String key, boolean isVN) {
+        return handle(text, parseKey(key), true, alphabetFor(isVN));
     }
 
-    public String encryptENG(String plaintext, String key) {
-        return handle(plaintext, parseKey(key), true, AlphabetConstants.ALPHABET_ENG);
+    @Override
+    public String decrypt(String text, String key, boolean isVN) {
+        return handle(text, parseKey(key), false, alphabetFor(isVN));
     }
 
-    public String encryptVIE(String plaintext, String key) {
-        return handle(plaintext, parseKey(key), true, AlphabetConstants.ALPHABET_VIE);
-    }
-
-    public String decryptENG(String ciphertext, String key) {
-        return handle(ciphertext, parseKey(key), false, AlphabetConstants.ALPHABET_ENG);
-    }
-
-
-    public String decryptVIE(String ciphertext, String key) {
-        return handle(ciphertext, parseKey(key), false, AlphabetConstants.ALPHABET_VIE);
-    }
-
-    private String alphabetFor(String language) {
-        return "VIE".equalsIgnoreCase(language)
-                ? AlphabetConstants.ALPHABET_VIE
-                : AlphabetConstants.ALPHABET_ENG;
+    private String alphabetFor(boolean isVN) {
+        return isVN ? AlphabetConstants.ALPHABET_VIE : AlphabetConstants.ALPHABET_ENG;
     }
 
     private String handle(String text, int[] ab, boolean encrypt, String alphabet) {
@@ -92,7 +81,10 @@ public class AffineAlgorithm implements ClassicAlgorithm {
     }
 
     private int[] parseKey(String key) {
-        String[] parts = key.split(",");
+        String[] parts = key.trim().split("[,\\s]+");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Affine key must have 2 numbers");
+        }
         String part1 = parts[0].trim();
         String part2 = parts[1].trim();
 

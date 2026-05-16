@@ -1,11 +1,10 @@
 package view.panel;
 
+import common.PanelUtils;
 import model.AlgorithmItem;
 
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,10 +21,16 @@ public class ClassicPanel extends JPanel {
     private final JButton primaryButton = new JButton("Primary");
     private final JButton secondaryButton = new JButton("Secondary");
     private final JButton generateButton = new JButton("Generate");
+    private final JButton copyKeyButton = new JButton("Copy key");
+    private final JButton saveKeyButton = new JButton("Save key");
+    private final JButton importKeyButton = new JButton("Import key");
     private final JButton clearButton = new JButton("Clear");
+    private final JButton saveInputTextButton = new JButton("Save input");
+    private final JButton saveOutputTextButton = new JButton("Save output");
     private final JComboBox<String> languageBox = new JComboBox<>(new String[]{"ENG", "VIE"});
     private final JLabel optionTitleLabel = new JLabel("Option Deck");
     private final Map<String, KeyAccessor> keyPanels = new LinkedHashMap<>();
+    private KeyAccessor currentKeyPanel;
 
     public ClassicPanel(List<AlgorithmItem> items) {
         super(new BorderLayout(12, 0));
@@ -61,6 +66,7 @@ public class ClassicPanel extends JPanel {
         optionTitleLabel.setFont(optionTitleLabel.getFont().deriveFont(Font.BOLD, 14f));
         optionDeck.add(optionTitleLabel, BorderLayout.NORTH);
         optionDeck.add(optionCards, BorderLayout.CENTER);
+        optionDeck.add(keyActionPanel(), BorderLayout.SOUTH);
         workspace.add(optionDeck, BorderLayout.NORTH);
 
         JPanel split = new JPanel(new GridBagLayout());
@@ -72,7 +78,7 @@ public class ClassicPanel extends JPanel {
 
         gbc.gridx = 0;
         gbc.weightx = 1.0;
-        split.add(editorCard("Input", inputArea), gbc);
+        split.add(editorCard("Input", inputArea, saveInputTextButton), gbc);
 
         Dimension buttonSize = new Dimension(120, 28);
         JPanel splitOption = new JPanel();
@@ -97,7 +103,7 @@ public class ClassicPanel extends JPanel {
         gbc.gridx = 2;
         gbc.weightx = 1.0;
         gbc.insets = new Insets(0, 12, 0, 0);
-        split.add(editorCard("Output", outputArea), gbc);
+        split.add(editorCard("Output", outputArea, saveOutputTextButton), gbc);
 
         workspace.add(split, BorderLayout.CENTER);
         body.add(workspace, BorderLayout.CENTER);
@@ -108,10 +114,6 @@ public class ClassicPanel extends JPanel {
 
     public JList<AlgorithmItem> getAlgorithmList() {
         return algorithmList;
-    }
-
-    public JPanel getOptionCards() {
-        return optionCards;
     }
 
     public JTextArea getInputArea() {
@@ -134,8 +136,28 @@ public class ClassicPanel extends JPanel {
         return generateButton;
     }
 
+    public JButton getCopyKeyButton() {
+        return copyKeyButton;
+    }
+
+    public JButton getSaveKeyButton() {
+        return saveKeyButton;
+    }
+
+    public JButton getImportKeyButton() {
+        return importKeyButton;
+    }
+
     public JButton getClearButton() {
         return clearButton;
+    }
+
+    public JButton getSaveInputTextButton() {
+        return saveInputTextButton;
+    }
+
+    public JButton getSaveOutputTextButton() {
+        return saveOutputTextButton;
     }
 
     public String getSelectedLanguage() {
@@ -143,15 +165,19 @@ public class ClassicPanel extends JPanel {
         return value == null ? "ENG" : value.toString();
     }
 
-    public String getKeyFor(String algorithmKey) {
-        KeyAccessor panel = keyPanels.get(algorithmKey);
-        return panel == null ? "" : panel.getKey();
+    public void showOptions(String algorithmKey) {
+        CardLayout cl = (CardLayout) optionCards.getLayout();
+        cl.show(optionCards, algorithmKey);
+        currentKeyPanel = keyPanels.get(algorithmKey);
     }
 
-    public void setKeyFor(String algorithmKey, String key) {
-        KeyAccessor panel = keyPanels.get(algorithmKey);
-        if (panel != null) {
-            panel.setKey(key);
+    public String getKey() {
+        return currentKeyPanel == null ? "" : currentKeyPanel.getKey();
+    }
+
+    public void setKey(String key) {
+        if (currentKeyPanel != null) {
+            currentKeyPanel.setKey(key);
         }
     }
 
@@ -163,10 +189,7 @@ public class ClassicPanel extends JPanel {
         JPanel caesarGrid = new JPanel(new GridLayout(1, 1, 10, 10));
         caesarGrid.setOpaque(false);
         caesarGrid.add(field("Key", caesarField));
-        JLabel caesarHint = new JLabel("Nhập số nguyên, ví dụ: 3 hoặc -2");
-        caesarHint.setForeground(new Color(90, 90, 90));
         caesarPanel.add(caesarGrid, BorderLayout.CENTER);
-        caesarPanel.add(caesarHint, BorderLayout.SOUTH);
         addKeyPanel("caesar", caesarPanel, () -> caesarField.getText().trim(), key -> caesarField.setText(key == null ? "" : key.trim()));
 
         JTextField affineA = new JTextField("");
@@ -178,10 +201,7 @@ public class ClassicPanel extends JPanel {
         affineGrid.setOpaque(false);
         affineGrid.add(field("a", affineA));
         affineGrid.add(field("b", affineB));
-        JLabel affineHint = new JLabel("Nhập a,b (ví dụ: 5,8)");
-        affineHint.setForeground(new Color(90, 90, 90));
         affinePanel.add(affineGrid, BorderLayout.CENTER);
-        affinePanel.add(affineHint, BorderLayout.SOUTH);
         addKeyPanel("affine", affinePanel, () -> {
             String a = affineA.getText().trim();
             String b = affineB.getText().trim();
@@ -195,7 +215,7 @@ public class ClassicPanel extends JPanel {
                 affineB.setText("");
                 return;
             }
-            String[] parts = key.split(",");
+            String[] parts = key.trim().split("[,\\s]+");
             affineA.setText(parts.length > 0 ? parts[0].trim() : "");
             affineB.setText(parts.length > 1 ? parts[1].trim() : "");
         });
@@ -207,10 +227,7 @@ public class ClassicPanel extends JPanel {
         JPanel hillGrid = new JPanel(new GridLayout(1, 1, 10, 10));
         hillGrid.setOpaque(false);
         hillGrid.add(field("Matrix 2x2", hillField));
-        JLabel hillHint = new JLabel("Nhap a,b,c,d (vi du: 3,3,2,5)");
-        hillHint.setForeground(new Color(90, 90, 90));
         hillPanel.add(hillGrid, BorderLayout.CENTER);
-        hillPanel.add(hillHint, BorderLayout.SOUTH);
         addKeyPanel("hill", hillPanel, () -> hillField.getText().trim(), key -> hillField.setText(key == null ? "" : key.trim()));
 
         JTextArea substitutionArea = new JTextArea(3, 20);
@@ -221,9 +238,6 @@ public class ClassicPanel extends JPanel {
         substitutionPanel.setOpaque(false);
         substitutionPanel.setBorder(new EmptyBorder(2, 2, 2, 2));
         substitutionPanel.add(field("Alphabet permutation", new JScrollPane(substitutionArea)), BorderLayout.CENTER);
-        JLabel substitutionHint = new JLabel("Dung Generate de tao khoa hoan vi nhanh hon.");
-        substitutionHint.setForeground(new Color(90, 90, 90));
-        substitutionPanel.add(substitutionHint, BorderLayout.SOUTH);
         addKeyPanel("substitution", substitutionPanel,
                 () -> substitutionArea.getText().trim(),
                 key -> substitutionArea.setText(key == null ? "" : key.trim()));
@@ -235,50 +249,42 @@ public class ClassicPanel extends JPanel {
         JPanel vigenereGrid = new JPanel(new GridLayout(1, 1, 10, 10));
         vigenereGrid.setOpaque(false);
         vigenereGrid.add(field("Key", vigenereField));
-        JLabel vigenereHint = new JLabel("Nhập chuỗi ký tự (ví dụ: KEY, hello)");
-        vigenereHint.setForeground(new Color(90, 90, 90));
         vigenerePanel.add(vigenereGrid, BorderLayout.CENTER);
-        vigenerePanel.add(vigenereHint, BorderLayout.SOUTH);
         addKeyPanel("vigenere", vigenerePanel, () -> vigenereField.getText().trim(), key -> vigenereField.setText(key == null ? "" : key.trim()));
     }
 
     private void addKeyPanel(String algorithmKey, JComponent panel, Supplier<String> getter, java.util.function.Consumer<String> setter) {
-        keyPanels.put(algorithmKey, new KeyAccessor(getter, setter));
+        KeyAccessor accessor = new KeyAccessor(getter, setter);
+        keyPanels.put(algorithmKey, accessor);
+        if (currentKeyPanel == null) {
+            currentKeyPanel = accessor;
+        }
         optionCards.add(panel, algorithmKey);
     }
 
-    private JPanel editorCard(String title, JTextArea area) {
-        JPanel card = card(new BorderLayout(0, 8));
-        JLabel label = new JLabel(title);
-        label.setFont(label.getFont().deriveFont(Font.BOLD, 13f));
-        JPanel top = new JPanel(new BorderLayout());
-        top.setOpaque(false);
-        top.add(label, BorderLayout.WEST);
-        card.add(top, BorderLayout.NORTH);
-        card.add(new JScrollPane(area), BorderLayout.CENTER);
-        return card;
+    private JPanel editorCard(String title, JTextArea area, JButton saveButton) {
+        return PanelUtils.editorCard(title, area, saveButton);
+    }
+
+    private JPanel keyActionPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        panel.setOpaque(false);
+        panel.add(copyKeyButton);
+        panel.add(saveKeyButton);
+        panel.add(importKeyButton);
+        return panel;
     }
 
     private JPanel field(String label, JComponent component) {
-        JPanel panel = new JPanel(new BorderLayout(0, 6));
-        panel.setOpaque(false);
-        JLabel l = new JLabel(label);
-        panel.add(l, BorderLayout.NORTH);
-        panel.add(component, BorderLayout.CENTER);
-        return panel;
+        return PanelUtils.field(label, component);
     }
 
     private void configureButton(JButton button, Dimension size) {
-        button.setMargin(new Insets(4, 10, 4, 10));
-        button.setPreferredSize(size);
-        button.setMaximumSize(size);
-        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        PanelUtils.configureButton(button, size);
     }
 
     private JPanel card(LayoutManager layout) {
-        JPanel panel = new JPanel(layout);
-        panel.setBorder(new CompoundBorder(new LineBorder(new Color(220, 224, 230)), new EmptyBorder(12, 12, 12, 12)));
-        return panel;
+        return PanelUtils.card(layout);
     }
 
     private static final class KeyAccessor {

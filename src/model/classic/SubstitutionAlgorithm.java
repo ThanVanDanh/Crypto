@@ -13,27 +13,8 @@ public class SubstitutionAlgorithm implements ClassicAlgorithm {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     @Override
-    public String encryptENG(String plaintext, String key) {
-        return handleEncrypt(plaintext, key, AlphabetConstants.ALPHABET_ENG);
-    }
-
-    @Override
-    public String decryptENG(String ciphertext, String key) {
-        return handleDecrypt(ciphertext, key, AlphabetConstants.ALPHABET_ENG);
-    }
-
-    @Override
-    public String encryptVIE(String plaintext, String key) {
-        return handleEncrypt(plaintext, key, AlphabetConstants.ALPHABET_VIE);
-    }
-
-    @Override
-    public String decryptVIE(String ciphertext, String key) {
-        return handleDecrypt(ciphertext, key, AlphabetConstants.ALPHABET_VIE);
-    }
-
-    public String genKey(String language) {
-        String alphabet = alphabetFor(language);
+    public String genKey(boolean isVN) {
+        String alphabet = alphabetFor(isVN);
         List<Character> chars = new ArrayList<>();
         for (char c : alphabet.toCharArray()) {
             chars.add(c);
@@ -46,11 +27,22 @@ public class SubstitutionAlgorithm implements ClassicAlgorithm {
         return sb.toString();
     }
 
-    public boolean isValidKey(String key, String language) {
+    @Override
+    public String encrypt(String text, String key, boolean isVN) {
+        return handleEncrypt(text, key, alphabetFor(isVN));
+    }
+
+    @Override
+    public String decrypt(String text, String key, boolean isVN) {
+        return handleDecrypt(text, key, alphabetFor(isVN));
+    }
+
+    @Override
+    public boolean isValidKey(String key, boolean isVN) {
         if (key == null) {
             return false;
         }
-        String alphabet = alphabetFor(language);
+        String alphabet = alphabetFor(isVN);
         String trimmed = key.trim();
         if (trimmed.length() != alphabet.length()) {
             return false;
@@ -64,10 +56,6 @@ public class SubstitutionAlgorithm implements ClassicAlgorithm {
         return true;
     }
 
-    public String keyHint(String language) {
-        int n = alphabetFor(language).length();
-        return "Khoa Substitution phai la hoan vi du " + n + " ky tu cua bang chu cai dang chon.";
-    }
 
     private String handleEncrypt(String input, String key, String alphabet) {
         if (input == null) {
@@ -95,9 +83,7 @@ public class SubstitutionAlgorithm implements ClassicAlgorithm {
         return sb.toString();
     }
 
-    private String alphabetFor(String language) {
-        return "VIE".equalsIgnoreCase(language)
-                ? AlphabetConstants.ALPHABET_VIE
-                : AlphabetConstants.ALPHABET_ENG;
+    private String alphabetFor(boolean isVN) {
+        return isVN ? AlphabetConstants.ALPHABET_VIE : AlphabetConstants.ALPHABET_ENG;
     }
 }

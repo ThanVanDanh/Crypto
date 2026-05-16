@@ -10,27 +10,8 @@ public class HillAlgorithm implements ClassicAlgorithm {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     @Override
-    public String encryptENG(String plaintext, String key) {
-        return handle(plaintext, parseKey(key), true, AlphabetConstants.ALPHABET_ENG);
-    }
-
-    @Override
-    public String decryptENG(String ciphertext, String key) {
-        return handle(ciphertext, parseKey(key), false, AlphabetConstants.ALPHABET_ENG);
-    }
-
-    @Override
-    public String encryptVIE(String plaintext, String key) {
-        return handle(plaintext, parseKey(key), true, AlphabetConstants.ALPHABET_VIE);
-    }
-
-    @Override
-    public String decryptVIE(String ciphertext, String key) {
-        return handle(ciphertext, parseKey(key), false, AlphabetConstants.ALPHABET_VIE);
-    }
-
-    public String genKey(String language) {
-        int n = alphabetFor(language).length();
+    public String genKey(boolean isVN) {
+        int n = alphabetFor(isVN).length();
         int[] key;
         do {
             key = new int[]{
@@ -40,21 +21,28 @@ public class HillAlgorithm implements ClassicAlgorithm {
                     RANDOM.nextInt(n)
             };
         } while (!isInvertible(key, n));
-        return key[0] + "," + key[1] + "," + key[2] + "," + key[3];
+        return key[0] + " " + key[1] + " " + key[2] + " " + key[3];
     }
 
-    public boolean isValidKey(String key, String language) {
+    @Override
+    public String encrypt(String text, String key, boolean isVN) {
+        return handle(text, parseKey(key), true, alphabetFor(isVN));
+    }
+
+    @Override
+    public String decrypt(String text, String key, boolean isVN) {
+        return handle(text, parseKey(key), false, alphabetFor(isVN));
+    }
+
+    @Override
+    public boolean isValidKey(String key, boolean isVN) {
         try {
-            return isInvertible(parseKey(key), alphabetFor(language).length());
+            return isInvertible(parseKey(key), alphabetFor(isVN).length());
         } catch (RuntimeException ex) {
             return false;
         }
     }
 
-    public String keyHint(String language) {
-        int n = alphabetFor(language).length();
-        return "Khoa Hill 2x2 co dang a,b,c,d va det phai co nghich dao modulo " + n + ".";
-    }
 
     private String handle(String input, int[] key, boolean encrypt, String alphabet) {
         if (input == null) {
@@ -76,7 +64,9 @@ public class HillAlgorithm implements ClassicAlgorithm {
         }
 
         if (values.size() % 2 != 0) {
-            // them ky tu dem de du cap 2 ky tu cho ma tran hill 2x2
+            if (!encrypt) {
+                throw new IllegalArgumentException("Ciphertext Hill phai co so ky tu hop le la chan.");
+            }
             positions.add(-1);
             values.add(0);
         }
@@ -127,7 +117,7 @@ public class HillAlgorithm implements ClassicAlgorithm {
         if (key == null) {
             throw new IllegalArgumentException("Key must not be null");
         }
-        String[] parts = key.split(",");
+        String[] parts = key.trim().split("[,\\s]+");
         if (parts.length != 4) {
             throw new IllegalArgumentException("Hill key must have 4 numbers");
         }
@@ -138,10 +128,8 @@ public class HillAlgorithm implements ClassicAlgorithm {
         return result;
     }
 
-    private String alphabetFor(String language) {
-        return "VIE".equalsIgnoreCase(language)
-                ? AlphabetConstants.ALPHABET_VIE
-                : AlphabetConstants.ALPHABET_ENG;
+    private String alphabetFor(boolean isVN) {
+        return isVN ? AlphabetConstants.ALPHABET_VIE : AlphabetConstants.ALPHABET_ENG;
     }
 
     private int modInverse(int a, int m) {

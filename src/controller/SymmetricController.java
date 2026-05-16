@@ -1,9 +1,9 @@
 package controller;
 
+import common.ControllerUtils;
 import common.CryptoUtils;
 import model.AlgorithmItem;
 import model.symmetric.JceSymmetricAlgorithm;
-import model.symmetric.SymmetricAlgorithm;
 import view.MainFrame;
 import view.panel.SymmetricPanel;
 
@@ -19,7 +19,7 @@ import java.util.concurrent.Callable;
 public class SymmetricController {
     private final MainFrame frame;
     private final SymmetricPanel panel;
-    private final Map<String, SymmetricAlgorithm> algorithms = new LinkedHashMap<>();
+    private final Map<String, JceSymmetricAlgorithm> algorithms = new LinkedHashMap<>();
     private final Map<String, int[]> keySizesByAlgorithm = new LinkedHashMap<>();
     private final Map<String, Integer> ivSizesByAlgorithm = new LinkedHashMap<>();
     private AlgorithmItem selected;
@@ -73,7 +73,16 @@ public class SymmetricController {
         panel.getPrimaryButton().addActionListener(e -> onPrimary());
         panel.getSecondaryButton().addActionListener(e -> onSecondary());
         panel.getGenerateButton().addActionListener(e -> onGenerate());
+        panel.getCopyKeyButton().addActionListener(e -> onCopyKey());
+        panel.getSaveKeyButton().addActionListener(e -> onSaveKey());
+        panel.getImportKeyButton().addActionListener(e -> onImportKey());
         panel.getClearButton().addActionListener(e -> onClear());
+        panel.getBrowseInputFileButton().addActionListener(e -> chooseInputFile());
+        panel.getBrowseOutputFileButton().addActionListener(e -> chooseOutputFile());
+        panel.getEncryptFileButton().addActionListener(e -> onEncryptFile());
+        panel.getDecryptFileButton().addActionListener(e -> onDecryptFile());
+        panel.getSaveInputTextButton().addActionListener(e -> onSaveText("input.txt", panel.getInputArea().getText()));
+        panel.getSaveOutputTextButton().addActionListener(e -> onSaveText("output.txt", panel.getOutputArea().getText()));
         panel.getAlgorithmList().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 AlgorithmItem item = panel.getAlgorithmList().getSelectedValue();
@@ -93,12 +102,13 @@ public class SymmetricController {
         if (!requireInput(input, "Vui lòng nhập plaintext")) {
             return;
         }
-        SymmetricAlgorithm algorithm = currentAlgorithm();
+        JceSymmetricAlgorithm algorithm = currentAlgorithm();
         KeyMaterial material = readKeyMaterial(algorithm);
         if (material == null) {
             return;
         }
-        runWorker(() -> algorithm.encrypt(input, material.key, material.iv));
+        algorithm.loadKey(material.key, material.iv);
+        runWorker(() -> algorithm.encryptText(input));
     }
 
     private void onSecondary() {
@@ -106,17 +116,18 @@ public class SymmetricController {
         if (!requireInput(input, "Vui lòng nhập ciphertext (Base64)")) {
             return;
         }
-        SymmetricAlgorithm algorithm = currentAlgorithm();
+        JceSymmetricAlgorithm algorithm = currentAlgorithm();
         KeyMaterial material = readKeyMaterial(algorithm);
         if (material == null) {
             return;
         }
-        runWorker(() -> algorithm.decrypt(input, material.key, material.iv));
+        algorithm.loadKey(material.key, material.iv);
+        runWorker(() -> algorithm.decryptText(input));
     }
 
     private void onGenerate() {
-        SymmetricAlgorithm algorithm = currentAlgorithm();
-        int keySizeBits = panel.getKeySizeBits(selected.getKey());
+        JceSymmetricAlgorithm algorithm = currentAlgorithm();
+        int keySizeBits = panel.getKeySizeBits();
         if (!isSupportedKeySize(algorithm, keySizeBits)) {
             frame.showMessage("Khóa không hợp lệ", "Kích thước key không được hỗ trợ.");
             return;
@@ -124,19 +135,91 @@ public class SymmetricController {
         int keySizeBytes = algorithm.keySizeBytes(keySizeBits);
         byte[] key = CryptoUtils.randomBytes(keySizeBytes);
         byte[] iv = algorithm.ivSizeBytes() == 0 ? new byte[0] : CryptoUtils.randomBytes(algorithm.ivSizeBytes());
-        panel.setKeyBase64(selected.getKey(), CryptoUtils.toBase64(key));
-        panel.setIvBase64(selected.getKey(), CryptoUtils.toBase64(iv));
+        panel.setKeyBase64(CryptoUtils.toBase64(key));
+        panel.setIvBase64(CryptoUtils.toBase64(iv));
+    }
+
+    private void onCopyKey() {
+        ControllerUtils.copyText(frame, currentKeyText(), "Vui long tao hoac nhap key truoc.");
+    }
+
+    private void onSaveKey() {
+        ControllerUtils.saveText(panel, frame, selected.getKey() + "-key.txt",
+                currentKeyText(), "Vui long tao hoac nhap key truoc.");
+    }
+
+    private void onImportKey() {
+        String content = ControllerUtils.openText(panel, frame);
+        if (content == null) {
+            return;
+        }
+        List<String> lines = ControllerUtils.textLines(content);
+        if (lines.isEmpty()) {
+            frame.showMessage("Thieu du lieu", "File key dang rong.");
+            return;
+        }
+        panel.setKeyBase64(lines.get(0));
+        panel.setIvBase64(lines.size() > 1 ? lines.get(1) : "");
+    }
+
+    private void onSaveText(String defaultName, String content) {
+        ControllerUtils.saveText(panel, frame, defaultName, content, "Khong co noi dung de luu.");
     }
 
     private void onClear() {
         panel.getInputArea().setText("");
         panel.getOutputArea().setText("");
+        panel.getInputFileField().setText("");
+        panel.getOutputFileField().setText("");
+    }
+
+    private void chooseInputFile() {
+        String path = ControllerUtils.chooseOpenFile(panel);
+        if (path != null) {
+            panel.getInputFileField().setText(path);
+        }
+    }
+
+    private void chooseOutputFile() {
+        String path = ControllerUtils.chooseSaveFile(panel, null);
+        if (path != null) {
+            panel.getOutputFileField().setText(path);
+        }
+    }
+
+    private void onEncryptFile() {
+        runFileCipher(true);
+    }
+
+    private void onDecryptFile() {
+        runFileCipher(false);
+    }
+
+    private void runFileCipher(boolean encrypt) {
+        String inputPath = panel.getInputFileField().getText();
+        String outputPath = panel.getOutputFileField().getText();
+        if (!ControllerUtils.requireFilePaths(frame, inputPath, outputPath)) {
+            return;
+        }
+        JceSymmetricAlgorithm algorithm = currentAlgorithm();
+        KeyMaterial material = readKeyMaterial(algorithm);
+        if (material == null) {
+            return;
+        }
+        algorithm.loadKey(material.key, material.iv);
+        runWorker(() -> {
+            if (encrypt) {
+                algorithm.encryptFile(inputPath, outputPath);
+            } else {
+                algorithm.decryptFile(inputPath, outputPath);
+            }
+            return outputPath;
+        });
     }
 
     private void selectAlgorithm(AlgorithmItem item) {
         selected = item;
-        CardLayout cl = (CardLayout) panel.getOptionCards().getLayout();
-        cl.show(panel.getOptionCards(), item.getKey());
+        panel.showOptions(item.getKey());
         updateButtonLabels();
     }
 
@@ -144,21 +227,24 @@ public class SymmetricController {
         panel.getPrimaryButton().setText("Encrypt");
         panel.getSecondaryButton().setText("Decrypt");
         panel.getGenerateButton().setText("Generate key");
+        panel.getCopyKeyButton().setEnabled(true);
+        panel.getSaveKeyButton().setEnabled(true);
+        panel.getImportKeyButton().setEnabled(true);
         panel.getGenerateButton().setEnabled(true);
         panel.getSecondaryButton().setEnabled(true);
     }
 
-    private SymmetricAlgorithm currentAlgorithm() {
-        SymmetricAlgorithm algorithm = algorithms.get(selected.getKey());
+    private JceSymmetricAlgorithm currentAlgorithm() {
+        JceSymmetricAlgorithm algorithm = algorithms.get(selected.getKey());
         if (algorithm == null) {
             throw new IllegalStateException("Chưa đăng ký thuật toán: " + selected.getKey());
         }
         return algorithm;
     }
 
-    private KeyMaterial readKeyMaterial(SymmetricAlgorithm algorithm) {
-        String keyBase64 = panel.getKeyBase64(selected.getKey());
-        String ivBase64 = panel.getIvBase64(selected.getKey());
+    private KeyMaterial readKeyMaterial(JceSymmetricAlgorithm algorithm) {
+        String keyBase64 = panel.getKeyBase64();
+        String ivBase64 = panel.getIvBase64();
         if (keyBase64.isBlank()) {
             frame.showMessage("Thiếu dữ liệu", "Vui lòng nhập key (Base64) hoặc Generate.");
             return null;
@@ -187,11 +273,11 @@ public class SymmetricController {
         return new KeyMaterial(key, iv);
     }
 
-    private boolean isSupportedKeySize(SymmetricAlgorithm algorithm, int keySizeBits) {
+    private boolean isSupportedKeySize(JceSymmetricAlgorithm algorithm, int keySizeBits) {
         return Arrays.stream(algorithm.supportedKeySizes()).anyMatch(size -> size == keySizeBits);
     }
 
-    private boolean isSupportedKeyLength(SymmetricAlgorithm algorithm, int keyLengthBytes) {
+    private boolean isSupportedKeyLength(JceSymmetricAlgorithm algorithm, int keyLengthBytes) {
         return Arrays.stream(algorithm.supportedKeySizes())
                 .map(algorithm::keySizeBytes)
                 .anyMatch(size -> size == keyLengthBytes);
@@ -203,6 +289,19 @@ public class SymmetricController {
         }
         frame.showMessage("Thiếu dữ liệu", message);
         return false;
+    }
+
+    private String currentKeyText() {
+        String key = panel.getKeyBase64();
+        String iv = panel.getIvBase64();
+        if (key.isBlank() && iv.isBlank()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(key);
+        if (!iv.isBlank()) {
+            sb.append(System.lineSeparator()).append(iv);
+        }
+        return sb.toString();
     }
 
     private void runWorker(Callable<String> worker) {
@@ -241,7 +340,7 @@ public class SymmetricController {
                 new JceSymmetricAlgorithm(transformation, keyAlgorithm, keySizes, keyBytes, ivSizeBytes, parameterType));
     }
 
-    private void addSymmetricAlgorithm(List<AlgorithmItem> items, String key, String displayName, SymmetricAlgorithm algorithm) {
+    private void addSymmetricAlgorithm(List<AlgorithmItem> items, String key, String displayName, JceSymmetricAlgorithm algorithm) {
         algorithms.put(key, algorithm);
         keySizesByAlgorithm.put(key, algorithm.supportedKeySizes());
         ivSizesByAlgorithm.put(key, algorithm.ivSizeBytes());
@@ -258,4 +357,3 @@ public class SymmetricController {
         }
     }
 }
-

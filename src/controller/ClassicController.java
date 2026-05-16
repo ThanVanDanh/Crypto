@@ -1,5 +1,6 @@
 package controller;
 
+import common.ControllerUtils;
 import model.AlgorithmItem;
 import model.classic.AffineAlgorithm;
 import model.classic.CaesarAlgorithm;
@@ -17,31 +18,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
 
 public class ClassicController {
     private final MainFrame frame;
     private final ClassicPanel panel;
     private final Map<String, ClassicAlgorithm> algorithms = new LinkedHashMap<>();
-    private final Map<String, Function<String, String>> keyGenerators = new LinkedHashMap<>();
-    private final Map<String, BiPredicate<String, String>> keyValidators = new LinkedHashMap<>();
-    private final Map<String, Function<String, String>> keyHints = new LinkedHashMap<>();
     private AlgorithmItem selected;
 
     public ClassicController(MainFrame frame) {
         this.frame = frame;
         List<AlgorithmItem> items = new ArrayList<>();
-        CaesarAlgorithm caesar = new CaesarAlgorithm();
-        AffineAlgorithm affine = new AffineAlgorithm();
-        HillAlgorithm hill = new HillAlgorithm();
-        SubstitutionAlgorithm substitution = new SubstitutionAlgorithm();
-        VigenereAlgorithm vigenere = new VigenereAlgorithm();
-        addClassicAlgorithm(items, "caesar", "Caesar Cipher", caesar, caesar::genKey, caesar::isValidKey, caesar::keyHint);
-        addClassicAlgorithm(items, "affine", "Affine Cipher", affine, affine::genKey, affine::isValidKey, affine::keyHint);
-        addClassicAlgorithm(items, "hill", "Hill Cipher", hill, hill::genKey, hill::isValidKey, hill::keyHint);
-        addClassicAlgorithm(items, "substitution", "Substitution Cipher", substitution, substitution::genKey, substitution::isValidKey, substitution::keyHint);
-        addClassicAlgorithm(items, "vigenere", "Vigenere Cipher", vigenere, vigenere::genKey, vigenere::isValidKey, vigenere::keyHint);
+        addClassicAlgorithm(items, "caesar", "Caesar Cipher", new CaesarAlgorithm());
+        addClassicAlgorithm(items, "affine", "Affine Cipher", new AffineAlgorithm());
+        addClassicAlgorithm(items, "hill", "Hill Cipher", new HillAlgorithm());
+        addClassicAlgorithm(items, "substitution", "Substitution Cipher", new SubstitutionAlgorithm());
+        addClassicAlgorithm(items, "vigenere", "Vigenere Cipher", new VigenereAlgorithm());
         panel = new ClassicPanel(items);
         bind();
     }
@@ -70,7 +61,12 @@ public class ClassicController {
         panel.getPrimaryButton().addActionListener(e -> onPrimary());
         panel.getSecondaryButton().addActionListener(e -> onSecondary());
         panel.getGenerateButton().addActionListener(e -> onGenerate());
+        panel.getCopyKeyButton().addActionListener(e -> onCopyKey());
+        panel.getSaveKeyButton().addActionListener(e -> onSaveKey());
+        panel.getImportKeyButton().addActionListener(e -> onImportKey());
         panel.getClearButton().addActionListener(e -> onClear());
+        panel.getSaveInputTextButton().addActionListener(e -> onSaveText("classic-input.txt", panel.getInputArea().getText()));
+        panel.getSaveOutputTextButton().addActionListener(e -> onSaveText("classic-output.txt", panel.getOutputArea().getText()));
         panel.getAlgorithmList().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 AlgorithmItem item = panel.getAlgorithmList().getSelectedValue();
@@ -87,37 +83,57 @@ public class ClassicController {
 
     private void onPrimary() {
         String input = panel.getInputArea().getText();
-        if (!requireInput(input, "Vui lòng nhập plaintext")) {
+        if (!requireInput(input, "Vui long nhap plaintext.")) {
             return;
         }
         ClassicAlgorithm algorithm = currentAlgorithm();
         if (!validateKey()) {
             return;
         }
-        String key = panel.getKeyFor(selected.getKey());
-        runWorker(() -> encryptByLanguage(algorithm, input, key));
+        String key = panel.getKey();
+        runWorker(() -> algorithm.encrypt(input, key, isVietnamese()));
     }
 
     private void onSecondary() {
         String input = panel.getInputArea().getText();
-        if (!requireInput(input, "Vui lòng nhập ciphertext")) {
+        if (!requireInput(input, "Vui long nhap ciphertext.")) {
             return;
         }
         ClassicAlgorithm algorithm = currentAlgorithm();
         if (!validateKey()) {
             return;
         }
-        String key = panel.getKeyFor(selected.getKey());
-        runWorker(() -> decryptByLanguage(algorithm, input, key));
+        String key = panel.getKey();
+        runWorker(() -> algorithm.decrypt(input, key, isVietnamese()));
     }
 
     private void onGenerate() {
-        Function<String, String> generator = keyGenerators.get(selected.getKey());
-        if (generator != null) {
-            panel.setKeyFor(selected.getKey(), generator.apply(panel.getSelectedLanguage()));
+        panel.setKey(currentAlgorithm().genKey(isVietnamese()));
+    }
+
+    private void onCopyKey() {
+        ControllerUtils.copyText(frame, currentKeyText(), "Vui long nhap hoac tao key truoc.");
+    }
+
+    private void onSaveKey() {
+        ControllerUtils.saveText(panel, frame, selected.getKey() + "-key.txt",
+                currentKeyText(), "Vui long nhap hoac tao key truoc.");
+    }
+
+    private void onImportKey() {
+        String content = ControllerUtils.openText(panel, frame);
+        if (content == null) {
             return;
         }
-        frame.showMessage("Không hỗ trợ", "Thuật toán này không hỗ trợ sinh key.");
+        if (content.isBlank()) {
+            frame.showMessage("Thieu du lieu", "File key dang rong.");
+            return;
+        }
+        panel.setKey(content.trim());
+    }
+
+    private void onSaveText(String defaultName, String content) {
+        ControllerUtils.saveText(panel, frame, defaultName, content, "Khong co noi dung de luu.");
     }
 
     private void onClear() {
@@ -127,63 +143,53 @@ public class ClassicController {
 
     private void selectAlgorithm(AlgorithmItem item) {
         selected = item;
-        CardLayout cl = (CardLayout) panel.getOptionCards().getLayout();
-        cl.show(panel.getOptionCards(), item.getKey());
-        updateButtonLabels(item.getKey());
+        panel.showOptions(item.getKey());
+        updateButtonLabels();
     }
 
-    private void updateButtonLabels(String key) {
+    private void updateButtonLabels() {
         panel.getPrimaryButton().setText("Encrypt");
         panel.getSecondaryButton().setText("Decrypt");
         panel.getGenerateButton().setText("Generate key");
-        panel.getGenerateButton().setEnabled(keyGenerators.get(key) != null);
+        panel.getGenerateButton().setEnabled(true);
+        panel.getCopyKeyButton().setEnabled(true);
+        panel.getSaveKeyButton().setEnabled(true);
+        panel.getImportKeyButton().setEnabled(true);
         panel.getSecondaryButton().setEnabled(true);
     }
 
     private ClassicAlgorithm currentAlgorithm() {
         ClassicAlgorithm algorithm = algorithms.get(selected.getKey());
         if (algorithm == null) {
-            throw new IllegalStateException("Chưa đăng ký thuật toán: " + selected.getKey());
+            throw new IllegalStateException("Chua dang ky thuat toan: " + selected.getKey());
         }
         return algorithm;
     }
 
     private boolean validateKey() {
-        BiPredicate<String, String> validator = keyValidators.get(selected.getKey());
-        if (validator != null) {
-            String key = panel.getKeyFor(selected.getKey());
-            String language = panel.getSelectedLanguage();
-            if (validator.test(key, language)) {
-                return true;
-            }
-            Function<String, String> hintProvider = keyHints.get(selected.getKey());
-            String hint = hintProvider == null ? "Khóa không hợp lệ" : hintProvider.apply(language);
-            frame.showMessage("Khóa không hợp lệ", hint);
-            return false;
+        ClassicAlgorithm algorithm = currentAlgorithm();
+        String key = panel.getKey();
+        if (algorithm.isValidKey(key, isVietnamese())) {
+            return true;
         }
-        return true;
+        frame.showMessage("Khoa khong hop le", "Vui long kiem tra key cua thuat toan dang chon.");
+        return false;
     }
 
-    private String encryptByLanguage(ClassicAlgorithm algorithm, String input, String key) {
-        if ("VIE".equalsIgnoreCase(panel.getSelectedLanguage())) {
-            return algorithm.encryptVIE(input, key);
-        }
-        return algorithm.encryptENG(input, key);
-    }
-
-    private String decryptByLanguage(ClassicAlgorithm algorithm, String input, String key) {
-        if ("VIE".equalsIgnoreCase(panel.getSelectedLanguage())) {
-            return algorithm.decryptVIE(input, key);
-        }
-        return algorithm.decryptENG(input, key);
+    private boolean isVietnamese() {
+        return "VIE".equalsIgnoreCase(panel.getSelectedLanguage());
     }
 
     private boolean requireInput(String input, String message) {
         if (!input.isBlank()) {
             return true;
         }
-        frame.showMessage("Thiếu dữ liệu", message);
+        frame.showMessage("Thieu du lieu", message);
         return false;
+    }
+
+    private String currentKeyText() {
+        return panel.getKey();
     }
 
     private void runWorker(Callable<String> worker) {
@@ -199,7 +205,7 @@ public class ClassicController {
                     panel.getOutputArea().setText(get());
                 } catch (Exception ex) {
                     panel.getOutputArea().setText("");
-                    JOptionPane.showMessageDialog(panel, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(panel, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
@@ -209,21 +215,8 @@ public class ClassicController {
     private void addClassicAlgorithm(List<AlgorithmItem> items,
                                      String key,
                                      String displayName,
-                                     ClassicAlgorithm algorithm,
-                                     Function<String, String> keyGenerator,
-                                     BiPredicate<String, String> keyValidator,
-                                     Function<String, String> keyHint) {
+                                     ClassicAlgorithm algorithm) {
         algorithms.put(key, algorithm);
         items.add(new AlgorithmItem(key, displayName));
-        if (keyGenerator != null) {
-            keyGenerators.put(key, keyGenerator);
-        }
-        if (keyValidator != null) {
-            keyValidators.put(key, keyValidator);
-        }
-        if (keyHint != null) {
-            keyHints.put(key, keyHint);
-        }
     }
 }
-

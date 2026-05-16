@@ -1,13 +1,11 @@
 package model.classic;
 
 public interface ClassicAlgorithm {
-    String encryptENG(String plaintext, String key);
+    String genKey(boolean isVN);
 
-    String decryptENG(String ciphertext, String key);
+    String encrypt(String text, String key, boolean isVN);
 
-    String encryptVIE(String plaintext, String key);
+    String decrypt(String text, String key, boolean isVN);
 
-    String decryptVIE(String ciphertext, String key);
-
-
+    boolean isValidKey(String key, boolean isVN);
 }

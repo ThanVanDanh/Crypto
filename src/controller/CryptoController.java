@@ -58,7 +58,7 @@ public class CryptoController {
         tabTargets.put("Classic", new TabActions(classicController::triggerPrimary, classicController::triggerSecondary, classicController::triggerGenerate, classicController::triggerClear));
         tabTargets.put("Symmetric", new TabActions(symmetricController::triggerPrimary, symmetricController::triggerSecondary, symmetricController::triggerGenerate, symmetricController::triggerClear));
         tabTargets.put("Asymmetric", new TabActions(asymmetricController::triggerPrimary, asymmetricController::triggerSecondary, asymmetricController::triggerGenerate, asymmetricController::triggerClear));
-        tabTargets.put("Hash", new TabActions(hashController::triggerPrimary, hashController::triggerSecondary, hashController::triggerGenerate, hashController::triggerClear));
+        tabTargets.put("Hash", new TabActions(hashController::triggerPrimary, this::doNothing, this::doNothing, hashController::triggerClear));
 
         JRootPane root = frame.getRootPane();
         InputMap inputMap = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -85,6 +85,9 @@ public class CryptoController {
                 runnable.run();
             }
         });
+    }
+
+    private void doNothing() {
     }
 
     private void dispatch(Map<String, TabActions> tabTargets, ActionSelector selector) {

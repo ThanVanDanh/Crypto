@@ -8,44 +8,8 @@ public class VigenereAlgorithm implements ClassicAlgorithm {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     @Override
-    public String encryptENG(String plaintext, String key) {
-        return handle(plaintext, key, AlphabetConstants.ALPHABET_ENG, true);
-    }
-
-    @Override
-    public String decryptENG(String ciphertext, String key) {
-        return handle(ciphertext, key, AlphabetConstants.ALPHABET_ENG, false);
-    }
-
-    @Override
-    public String encryptVIE(String plaintext, String key) {
-        return handle(plaintext, key, AlphabetConstants.ALPHABET_VIE, true);
-    }
-
-    @Override
-    public String decryptVIE(String ciphertext, String key) {
-        return handle(ciphertext, key, AlphabetConstants.ALPHABET_VIE, false);
-    }
-
-    public boolean isValidKey(String key, String language) {
-        if (key == null || key.trim().isEmpty()) {
-            return false;
-        }
-        String alphabet = alphabetFor(language);
-        for (char c : key.toCharArray()) {
-            if (alphabet.indexOf(c) < 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public String keyHint(String language) {
-        return "Khóa Vigenere là chuỗi ký tự thuộc bảng chữ cái (ví dụ: KEY, hello).";
-    }
-
-    public String genKey(String language) {
-        String alphabet = alphabetFor(language);
+    public String genKey(boolean isVN) {
+        String alphabet = alphabetFor(isVN);
         int length = 6 + RANDOM.nextInt(5);
         StringBuilder sb = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
@@ -54,10 +18,32 @@ public class VigenereAlgorithm implements ClassicAlgorithm {
         return sb.toString();
     }
 
-    private String alphabetFor(String language) {
-        return "VIE".equalsIgnoreCase(language)
-                ? AlphabetConstants.ALPHABET_VIE
-                : AlphabetConstants.ALPHABET_ENG;
+    @Override
+    public String encrypt(String text, String key, boolean isVN) {
+        return handle(text, key, alphabetFor(isVN), true);
+    }
+
+    @Override
+    public String decrypt(String text, String key, boolean isVN) {
+        return handle(text, key, alphabetFor(isVN), false);
+    }
+
+    @Override
+    public boolean isValidKey(String key, boolean isVN) {
+        if (key == null || key.trim().isEmpty()) {
+            return false;
+        }
+        String alphabet = alphabetFor(isVN);
+        for (char c : key.toCharArray()) {
+            if (alphabet.indexOf(c) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String alphabetFor(boolean isVN) {
+        return isVN ? AlphabetConstants.ALPHABET_VIE : AlphabetConstants.ALPHABET_ENG;
     }
 
     private String handle(String input, String key, String alphabet, boolean encrypt) {
