@@ -62,9 +62,6 @@ public class ClassicPanel extends JPanel {
         JPanel body = new JPanel(new BorderLayout(0, 12));
         JPanel workspace = new JPanel(new BorderLayout(0, 12));
         JPanel optionDeck = PanelUtils.card(new BorderLayout(0, 10));
-        JLabel optionTitleLabel = new JLabel("Option Deck");
-        optionTitleLabel.setFont(optionTitleLabel.getFont().deriveFont(Font.BOLD, 14f));
-        optionDeck.add(optionTitleLabel, BorderLayout.NORTH);
         optionDeck.add(optionCards, BorderLayout.CENTER);
         optionDeck.add(keyActionPanel(), BorderLayout.SOUTH);
         workspace.add(optionDeck, BorderLayout.NORTH);

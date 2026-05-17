@@ -15,10 +15,10 @@ import java.util.Map;
 
 public class SymmetricController {
 
-    private static final String[] MODES    = {"CBC", "ECB", "CFB", "OFB", "CTR", "PCBC", "CTS"};
+    private static final String[] MODES = {"CBC", "ECB", "CFB", "OFB", "CTR"};
     private static final String[] PADDINGS = {"PKCS5Padding", "NoPadding", "ISO10126Padding"};
 
-    private final MainFrame      frame;
+    private final MainFrame frame;
     private final SymmetricPanel panel;
     private final Map<String, SymmetricAlgorithm> algorithms = new LinkedHashMap<>();
     private AlgorithmItem selected;
@@ -27,24 +27,26 @@ public class SymmetricController {
         this.frame = frame;
         List<AlgorithmItem> items = new ArrayList<>();
 
-        addBlock(items, "aes",      "AES",           "AES",
-                new int[]{128, 192, 256},              new int[]{16, 24, 32});
-        addBlock(items, "des",      "DES",           "DES",
-                new int[]{56},                         new int[]{8});
-        addBlock(items, "3des",     "DESede (3DES)", "DESede",
-                new int[]{112, 168},                   new int[]{16, 24});
-        addBlock(items, "blowfish", "Blowfish",      "Blowfish",
+        addBlock(items, "aes", "AES", "AES",
+                new int[]{128, 192, 256}, new int[]{16, 24, 32});
+        addBlock(items, "des", "DES", "DES",
+                new int[]{56}, new int[]{8});
+        addBlock(items, "3des", "DESede (3DES)", "DESede",
+                new int[]{112, 168}, new int[]{16, 24});
+        addBlock(items, "blowfish", "Blowfish", "Blowfish",
                 new int[]{32, 64, 128, 192, 256, 448}, new int[]{4, 8, 16, 24, 32, 56});
-        addBlock(items, "rc2",      "RC2",           "RC2",
-                new int[]{40, 64, 128},                new int[]{5, 8, 16});
+        addBlock(items, "rc2", "RC2", "RC2",
+                new int[]{40, 64, 128}, new int[]{5, 8, 16});
         addStream(items, "arcfour", "ARCFOUR (RC4)", "ARCFOUR",
-                new int[]{40, 64, 128},                new int[]{5, 8, 16});
+                new int[]{40, 64, 128}, new int[]{5, 8, 16});
 
         panel = new SymmetricPanel(items, algorithms);
         bind();
     }
 
-    public SymmetricPanel getPanel() { return panel; }
+    public SymmetricPanel getPanel() {
+        return panel;
+    }
 
     private void bind() {
         panel.getPrimaryButton().addActionListener(e -> onPrimary());
@@ -135,8 +137,13 @@ public class SymmetricController {
         panel.getOutputFileField().setText("");
     }
 
-    private void onEncryptFile() { runFileCipher(true);  }
-    private void onDecryptFile() { runFileCipher(false); }
+    private void onEncryptFile() {
+        runFileCipher(true);
+    }
+
+    private void onDecryptFile() {
+        runFileCipher(false);
+    }
 
     private void runFileCipher(boolean encrypt) {
         String inputPath = panel.getInputFileField().getText().trim();
@@ -150,7 +157,7 @@ public class SymmetricController {
         algorithm.updateConfig(panel.getMode(), panel.getPadding());
         ControllerUtils.runFileWorker(panel, panel.getOutputFileField(), () -> {
             if (encrypt) algorithm.encryptFile(inputPath, outputPath);
-            else         algorithm.decryptFile(inputPath, outputPath);
+            else algorithm.decryptFile(inputPath, outputPath);
             return outputPath;
         });
     }

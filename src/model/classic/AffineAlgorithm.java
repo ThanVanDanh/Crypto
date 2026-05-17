@@ -17,6 +17,7 @@ public class AffineAlgorithm implements ClassicAlgorithm {
         int b = RANDOM.nextInt(n);
         return a + " " + b;
     }
+
     @Override
     public boolean isValidKey(String key, boolean isVN) {
         try {
@@ -77,7 +78,7 @@ public class AffineAlgorithm implements ClassicAlgorithm {
         if (parts.length != 2) {
             throw new IllegalArgumentException("Key Affine phai co 2 so nguyen");
         }
-        return new int[]{ Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()) };
+        return new int[]{Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim())};
     }
 
     private int modInverse(int a, int m) {

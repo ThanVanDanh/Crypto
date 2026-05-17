@@ -23,7 +23,7 @@ public class HashAlgorithm {
              DigestInputStream dis = new DigestInputStream(is, digest)) {
             byte[] buffer = new byte[1024];
             int read;
-            do{
+            do {
                 read = dis.read(buffer);
             }
             while (read != -1);

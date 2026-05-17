@@ -24,14 +24,14 @@ import java.security.SecureRandom;
 import java.security.interfaces.RSAKey;
 
 public class RsaAlgorithm {
-    private static final int[]        KEY_SIZES              = {2048, 3072, 4096};
-    private static final String       RSA_TRANSFORMATION     = "RSA/ECB/PKCS1Padding";
-    private static final String       AES_TRANSFORMATION     = "AES/CBC/PKCS5Padding";
-    private static final int          FILE_AES_KEY_SIZE_BITS = 128;
-    private static final int          FILE_IV_SIZE_BYTES     = 16;
-    private static final SecureRandom RANDOM                 = new SecureRandom();
+    private static final int[] KEY_SIZES = {2048, 3072, 4096};
+    private static final String RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
+    private static final String AES_TRANSFORMATION = "AES/CBC/PKCS5Padding";
+    private static final int FILE_AES_KEY_SIZE_BITS = 128;
+    private static final int FILE_IV_SIZE_BYTES = 16;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
-    private PublicKey  generatedPublicKey;
+    private PublicKey generatedPublicKey;
     private PrivateKey generatedPrivateKey;
 
     public String getPublicKey() {
@@ -78,7 +78,7 @@ public class RsaAlgorithm {
             Cipher aesCipher = Cipher.getInstance(AES_TRANSFORMATION);
             aesCipher.init(Cipher.ENCRYPT_MODE, aesKey, new IvParameterSpec(iv));
             try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(inputPath));
-                 CipherOutputStream  co = new CipherOutputStream(out, aesCipher)) {
+                 CipherOutputStream co = new CipherOutputStream(out, aesCipher)) {
                 CryptoUtils.transferStream(in, co);
             }
         }
@@ -90,12 +90,12 @@ public class RsaAlgorithm {
         rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
 
         try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(inputPath)))) {
-            byte[] keyBytes  = rsaCipher.doFinal(CryptoUtils.fromBase64(in.readUTF()));
-            byte[] ivBytes   = rsaCipher.doFinal(CryptoUtils.fromBase64(in.readUTF()));
-            SecretKeySpec aesKey    = new SecretKeySpec(keyBytes, "AES");
-            Cipher        aesCipher = Cipher.getInstance(AES_TRANSFORMATION);
+            byte[] keyBytes = rsaCipher.doFinal(CryptoUtils.fromBase64(in.readUTF()));
+            byte[] ivBytes = rsaCipher.doFinal(CryptoUtils.fromBase64(in.readUTF()));
+            SecretKeySpec aesKey = new SecretKeySpec(keyBytes, "AES");
+            Cipher aesCipher = Cipher.getInstance(AES_TRANSFORMATION);
             aesCipher.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(ivBytes));
-            try (CipherInputStream    ci  = new CipherInputStream(in, aesCipher);
+            try (CipherInputStream ci = new CipherInputStream(in, aesCipher);
                  BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(outputPath))) {
                 CryptoUtils.transferStream(ci, out);
             }
@@ -106,11 +106,13 @@ public class RsaAlgorithm {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
         generator.initialize(keySize);
         KeyPair keyPair = generator.generateKeyPair();
-        generatedPublicKey  = keyPair.getPublic();
+        generatedPublicKey = keyPair.getPublic();
         generatedPrivateKey = keyPair.getPrivate();
     }
 
-    public int[] supportedKeySizes() { return KEY_SIZES.clone(); }
+    public int[] supportedKeySizes() {
+        return KEY_SIZES.clone();
+    }
 
     private int maxPlaintextLength(PublicKey publicKey) {
         if (publicKey instanceof RSAKey rsaKey) {

@@ -20,42 +20,50 @@ import java.security.SecureRandom;
 public class SymmetricAlgorithm {
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private final String   jceName;
-    private final int[]    keySizes;
-    private final int[]    keyBytes;
+    private final String jceName;
+    private final int[] keySizes;
+    private final int[] keyBytes;
     private final String[] supportedModes;
     private final String[] supportedPaddings;
 
     private SecretKey secretKey;
-    private String    mode;
-    private String    padding;
+    private String mode;
+    private String padding;
 
     public SymmetricAlgorithm(String jceName, int[] keySizes, int[] keyBytes,
                               String[] supportedModes, String[] supportedPaddings) {
-        this.jceName           = jceName;
-        this.keySizes          = keySizes.clone();
-        this.keyBytes          = keyBytes.clone();
-        this.supportedModes    = supportedModes.clone();
+        this.jceName = jceName;
+        this.keySizes = keySizes.clone();
+        this.keyBytes = keyBytes.clone();
+        this.supportedModes = supportedModes.clone();
         this.supportedPaddings = supportedPaddings.clone();
-        this.mode              = supportedModes[0];
-        this.padding           = supportedPaddings[0];
+        this.mode = supportedModes[0];
+        this.padding = supportedPaddings[0];
     }
 
     public SymmetricAlgorithm(String jceName, int[] keySizes, int[] keyBytes) {
-        this.jceName           = jceName;
-        this.keySizes          = keySizes.clone();
-        this.keyBytes          = keyBytes.clone();
-        this.supportedModes    = null;
+        this.jceName = jceName;
+        this.keySizes = keySizes.clone();
+        this.keyBytes = keyBytes.clone();
+        this.supportedModes = null;
         this.supportedPaddings = null;
     }
 
-    public boolean  isStreamCipher()       { return supportedModes == null; }
-    public String[] getSupportedModes()    { return supportedModes    == null ? new String[0] : supportedModes.clone(); }
-    public String[] getSupportedPaddings() { return supportedPaddings == null ? new String[0] : supportedPaddings.clone(); }
+    public boolean isStreamCipher() {
+        return supportedModes == null;
+    }
+
+    public String[] getSupportedModes() {
+        return supportedModes == null ? new String[0] : supportedModes.clone();
+    }
+
+    public String[] getSupportedPaddings() {
+        return supportedPaddings == null ? new String[0] : supportedPaddings.clone();
+    }
 
     public void updateConfig(String mode, String padding) {
         if (!isStreamCipher()) {
-            this.mode    = mode;
+            this.mode = mode;
             this.padding = padding;
         }
     }
@@ -75,7 +83,9 @@ public class SymmetricAlgorithm {
         return secretKey == null ? "" : CryptoUtils.toBase64(secretKey.getEncoded());
     }
 
-    public void clearKey() { this.secretKey = null; }
+    public void clearKey() {
+        this.secretKey = null;
+    }
 
     public String encryptText(String plainText) throws Exception {
         if (isStreamCipher()) {
@@ -88,12 +98,12 @@ public class SymmetricAlgorithm {
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
             return CryptoUtils.toBase64(cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8)));
         }
-        byte[] iv          = new byte[cipher.getBlockSize()];
+        byte[] iv = new byte[cipher.getBlockSize()];
         RANDOM.nextBytes(iv);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));
         byte[] cipherBytes = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
-        byte[] combined    = new byte[iv.length + cipherBytes.length];
-        System.arraycopy(iv,          0, combined, 0,         iv.length);
+        byte[] combined = new byte[iv.length + cipherBytes.length];
+        System.arraycopy(iv, 0, combined, 0, iv.length);
         System.arraycopy(cipherBytes, 0, combined, iv.length, cipherBytes.length);
         return CryptoUtils.toBase64(combined);
     }
@@ -112,9 +122,9 @@ public class SymmetricAlgorithm {
         }
         int ivSize = cipher.getBlockSize();
         if (combined.length < ivSize) throw new IllegalArgumentException("Du lieu ma hoa khong hop le.");
-        byte[] iv          = new byte[ivSize];
+        byte[] iv = new byte[ivSize];
         byte[] cipherBytes = new byte[combined.length - ivSize];
-        System.arraycopy(combined, 0,      iv,          0, ivSize);
+        System.arraycopy(combined, 0, iv, 0, ivSize);
         System.arraycopy(combined, ivSize, cipherBytes, 0, cipherBytes.length);
         cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
         return new String(cipher.doFinal(cipherBytes), StandardCharsets.UTF_8);
@@ -122,7 +132,7 @@ public class SymmetricAlgorithm {
 
     public void encryptFile(String filePath, String destFile) throws Exception {
         Cipher cipher = Cipher.getInstance(isStreamCipher() ? jceName : getTransformation());
-        try (BufferedInputStream  fis = new BufferedInputStream(new FileInputStream(filePath));
+        try (BufferedInputStream fis = new BufferedInputStream(new FileInputStream(filePath));
              BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(destFile))) {
             if (!isStreamCipher() && requiresIv(cipher)) {
                 byte[] iv = new byte[cipher.getBlockSize()];
@@ -140,7 +150,7 @@ public class SymmetricAlgorithm {
 
     public void decryptFile(String filePath, String destFile) throws Exception {
         Cipher cipher = Cipher.getInstance(isStreamCipher() ? jceName : getTransformation());
-        try (DataInputStream      fis = new DataInputStream(new BufferedInputStream(new FileInputStream(filePath)));
+        try (DataInputStream fis = new DataInputStream(new BufferedInputStream(new FileInputStream(filePath)));
              BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(destFile))) {
             if (!isStreamCipher() && requiresIv(cipher)) {
                 byte[] iv = new byte[cipher.getBlockSize()];
@@ -155,7 +165,9 @@ public class SymmetricAlgorithm {
         }
     }
 
-    public int[] supportedKeySizes() { return keySizes.clone(); }
+    public int[] supportedKeySizes() {
+        return keySizes.clone();
+    }
 
     public int keySizeBytes(int keySizeBits) {
         for (int i = 0; i < keySizes.length; i++) {
@@ -164,7 +176,9 @@ public class SymmetricAlgorithm {
         return keySizeBits / 8;
     }
 
-    private String getTransformation() { return jceName + "/" + mode + "/" + padding; }
+    private String getTransformation() {
+        return jceName + "/" + mode + "/" + padding;
+    }
 
     private boolean requiresIv(Cipher cipher) {
         return !"ECB".equalsIgnoreCase(mode) && cipher.getBlockSize() > 0;

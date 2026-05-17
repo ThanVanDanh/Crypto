@@ -29,7 +29,6 @@ public class AsymmetricPanel extends JPanel {
     private final JButton browseInputFileButton = new JButton("Browse");
     private final JButton encryptFileButton = new JButton("Encrypt file");
     private final JButton decryptFileButton = new JButton("Decrypt file");
-    private final JLabel optionTitleLabel = new JLabel("Key Options");
     private final RsaKeyView keyPanel = new RsaKeyView(new int[]{2048, 3072, 4096});
 
     public AsymmetricPanel(List<AlgorithmItem> items) {
@@ -61,8 +60,6 @@ public class AsymmetricPanel extends JPanel {
         JPanel body = new JPanel(new BorderLayout(0, 12));
         JPanel workspace = new JPanel(new BorderLayout(0, 12));
         JPanel optionDeck = PanelUtils.card(new BorderLayout(0, 10));
-        optionTitleLabel.setFont(optionTitleLabel.getFont().deriveFont(Font.BOLD, 14f));
-        optionDeck.add(optionTitleLabel, BorderLayout.NORTH);
         optionDeck.add(optionCards, BorderLayout.CENTER);
         optionDeck.add(keyActionPanel(), BorderLayout.SOUTH);
         workspace.add(optionDeck, BorderLayout.NORTH);
@@ -223,7 +220,7 @@ public class AsymmetricPanel extends JPanel {
 
         JPanel grid = new JPanel(new GridLayout(2, 1, 8, 8));
         grid.setOpaque(false);
-        grid.add(PanelUtils.field("Input file",  PanelUtils.fileRow(inputFileField, browseInputFileButton)));
+        grid.add(PanelUtils.field("Input file", PanelUtils.fileRow(inputFileField, browseInputFileButton)));
         grid.add(PanelUtils.field("Output file", outputFileField));
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -231,8 +228,8 @@ public class AsymmetricPanel extends JPanel {
         actions.add(encryptFileButton);
         actions.add(decryptFileButton);
 
-        panel.add(title,   BorderLayout.NORTH);
-        panel.add(grid,    BorderLayout.CENTER);
+        panel.add(title, BorderLayout.NORTH);
+        panel.add(grid, BorderLayout.CENTER);
         panel.add(actions, BorderLayout.SOUTH);
         return panel;
     }

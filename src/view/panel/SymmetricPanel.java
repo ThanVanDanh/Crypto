@@ -14,24 +14,24 @@ import java.util.Map;
 public class SymmetricPanel extends JPanel {
     private static final Font EDITOR_FONT = new Font(Font.MONOSPACED, Font.PLAIN, 13);
 
-    private final JList<AlgorithmItem> algorithmList      = new JList<>();
-    private final JPanel               optionCards        = new JPanel(new CardLayout());
-    private final JTextArea            inputArea          = new JTextArea();
-    private final JTextArea            outputArea         = new JTextArea();
-    private final JButton primaryButton        = new JButton("Primary");
-    private final JButton secondaryButton      = new JButton("Secondary");
-    private final JButton generateButton       = new JButton("Generate");
-    private final JButton copyKeyButton        = new JButton("Copy key");
-    private final JButton saveKeyButton        = new JButton("Save key");
-    private final JButton importKeyButton      = new JButton("Import key");
-    private final JButton clearButton          = new JButton("Clear");
-    private final JButton saveInputTextButton  = new JButton("Import input");
+    private final JList<AlgorithmItem> algorithmList = new JList<>();
+    private final JPanel optionCards = new JPanel(new CardLayout());
+    private final JTextArea inputArea = new JTextArea();
+    private final JTextArea outputArea = new JTextArea();
+    private final JButton primaryButton = new JButton("Primary");
+    private final JButton secondaryButton = new JButton("Secondary");
+    private final JButton generateButton = new JButton("Generate");
+    private final JButton copyKeyButton = new JButton("Copy key");
+    private final JButton saveKeyButton = new JButton("Save key");
+    private final JButton importKeyButton = new JButton("Import key");
+    private final JButton clearButton = new JButton("Clear");
+    private final JButton saveInputTextButton = new JButton("Import input");
     private final JButton saveOutputTextButton = new JButton("Save output");
-    private final JTextField inputFileField    = new JTextField();
-    private final JTextField outputFileField   = new JTextField();
-    private final JButton browseInputFileButton  = new JButton("Browse");
-    private final JButton encryptFileButton    = new JButton("Encrypt file");
-    private final JButton decryptFileButton    = new JButton("Decrypt file");
+    private final JTextField inputFileField = new JTextField();
+    private final JTextField outputFileField = new JTextField();
+    private final JButton browseInputFileButton = new JButton("Browse");
+    private final JButton encryptFileButton = new JButton("Encrypt file");
+    private final JButton decryptFileButton = new JButton("Decrypt file");
 
     private final Map<String, KeyView> keyViews = new LinkedHashMap<>();
     private KeyView currentView;
@@ -40,8 +40,10 @@ public class SymmetricPanel extends JPanel {
         super(new BorderLayout(12, 0));
         setBorder(new EmptyBorder(4, 0, 0, 0));
 
-        inputArea.setLineWrap(true);  inputArea.setWrapStyleWord(true);
-        outputArea.setLineWrap(true); outputArea.setWrapStyleWord(true);
+        inputArea.setLineWrap(true);
+        inputArea.setWrapStyleWord(true);
+        outputArea.setLineWrap(true);
+        outputArea.setWrapStyleWord(true);
         inputArea.setFont(EDITOR_FONT);
         outputArea.setFont(EDITOR_FONT);
 
@@ -60,41 +62,49 @@ public class SymmetricPanel extends JPanel {
         side.add(new JScrollPane(algorithmList), BorderLayout.CENTER);
         add(side, BorderLayout.WEST);
 
-        JPanel body      = new JPanel(new BorderLayout(0, 12));
+        JPanel body = new JPanel(new BorderLayout(0, 12));
         JPanel workspace = new JPanel(new BorderLayout(0, 12));
 
         JPanel optionDeck = PanelUtils.card(new BorderLayout(0, 10));
-        JLabel deckLabel  = new JLabel("Key Options");
-        deckLabel.setFont(deckLabel.getFont().deriveFont(Font.BOLD, 14f));
-        optionDeck.add(deckLabel,        BorderLayout.NORTH);
-        optionDeck.add(optionCards,      BorderLayout.CENTER);
+        optionDeck.add(optionCards, BorderLayout.CENTER);
         optionDeck.add(keyActionPanel(), BorderLayout.SOUTH);
         workspace.add(optionDeck, BorderLayout.NORTH);
 
         JPanel split = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridy = 0; gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 1.0;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 1.0;
 
-        gbc.gridx = 0; gbc.weightx = 1.0; gbc.insets = new Insets(0, 0, 0, 12);
+        gbc.gridx = 0;
+        gbc.weightx = 1.0;
+        gbc.insets = new Insets(0, 0, 0, 12);
         split.add(PanelUtils.editorCard("Input", inputArea, saveInputTextButton), gbc);
 
         Dimension btnSize = new Dimension(120, 28);
         JPanel btnPanel = new JPanel();
         btnPanel.setOpaque(false);
         btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.Y_AXIS));
-        PanelUtils.configureButton(primaryButton,   btnSize);
+        PanelUtils.configureButton(primaryButton, btnSize);
         PanelUtils.configureButton(secondaryButton, btnSize);
-        PanelUtils.configureButton(generateButton,  btnSize);
-        PanelUtils.configureButton(clearButton,     btnSize);
-        btnPanel.add(primaryButton);   btnPanel.add(Box.createVerticalStrut(8));
-        btnPanel.add(secondaryButton); btnPanel.add(Box.createVerticalStrut(8));
-        btnPanel.add(generateButton);  btnPanel.add(Box.createVerticalStrut(8));
+        PanelUtils.configureButton(generateButton, btnSize);
+        PanelUtils.configureButton(clearButton, btnSize);
+        btnPanel.add(primaryButton);
+        btnPanel.add(Box.createVerticalStrut(8));
+        btnPanel.add(secondaryButton);
+        btnPanel.add(Box.createVerticalStrut(8));
+        btnPanel.add(generateButton);
+        btnPanel.add(Box.createVerticalStrut(8));
         btnPanel.add(clearButton);
 
-        gbc.gridx = 1; gbc.weightx = 0.2; gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.gridx = 1;
+        gbc.weightx = 0.2;
+        gbc.insets = new Insets(0, 0, 0, 0);
         split.add(btnPanel, gbc);
 
-        gbc.gridx = 2; gbc.weightx = 1.0; gbc.insets = new Insets(0, 12, 0, 0);
+        gbc.gridx = 2;
+        gbc.weightx = 1.0;
+        gbc.insets = new Insets(0, 12, 0, 0);
         split.add(PanelUtils.editorCard("Output", outputArea, saveOutputTextButton), gbc);
 
         workspace.add(split, BorderLayout.CENTER);
@@ -103,45 +113,106 @@ public class SymmetricPanel extends JPanel {
         add(body, BorderLayout.CENTER);
 
         for (AlgorithmItem item : items) {
-            SymmetricAlgorithm alg  = algorithms.get(item.getKey());
-            KeyView            view = alg.isStreamCipher()
+            SymmetricAlgorithm alg = algorithms.get(item.getKey());
+            KeyView view = alg.isStreamCipher()
                     ? new StreamKeyView(alg.supportedKeySizes())
                     : new BlockKeyView(alg.supportedKeySizes(),
-                                       alg.getSupportedModes(),
-                                       alg.getSupportedPaddings());
+                    alg.getSupportedModes(),
+                    alg.getSupportedPaddings());
             keyViews.put(item.getKey(), view);
             optionCards.add(view.getPanel(), item.getKey());
             if (currentView == null) currentView = view;
         }
     }
 
-    public JList<AlgorithmItem> getAlgorithmList()     { return algorithmList; }
-    public JTextArea            getInputArea()          { return inputArea; }
-    public JTextArea            getOutputArea()         { return outputArea; }
-    public JButton getPrimaryButton()        { return primaryButton; }
-    public JButton getSecondaryButton()      { return secondaryButton; }
-    public JButton getGenerateButton()       { return generateButton; }
-    public JButton getCopyKeyButton()        { return copyKeyButton; }
-    public JButton getSaveKeyButton()        { return saveKeyButton; }
-    public JButton getImportKeyButton()      { return importKeyButton; }
-    public JButton getClearButton()          { return clearButton; }
-    public JButton getSaveInputTextButton()  { return saveInputTextButton; }
-    public JButton getSaveOutputTextButton() { return saveOutputTextButton; }
-    public JTextField getInputFileField()    { return inputFileField; }
-    public JTextField getOutputFileField()   { return outputFileField; }
-    public JButton getBrowseInputFileButton()  { return browseInputFileButton; }
-    public JButton getEncryptFileButton()    { return encryptFileButton; }
-    public JButton getDecryptFileButton()    { return decryptFileButton; }
+    public JList<AlgorithmItem> getAlgorithmList() {
+        return algorithmList;
+    }
+
+    public JTextArea getInputArea() {
+        return inputArea;
+    }
+
+    public JTextArea getOutputArea() {
+        return outputArea;
+    }
+
+    public JButton getPrimaryButton() {
+        return primaryButton;
+    }
+
+    public JButton getSecondaryButton() {
+        return secondaryButton;
+    }
+
+    public JButton getGenerateButton() {
+        return generateButton;
+    }
+
+    public JButton getCopyKeyButton() {
+        return copyKeyButton;
+    }
+
+    public JButton getSaveKeyButton() {
+        return saveKeyButton;
+    }
+
+    public JButton getImportKeyButton() {
+        return importKeyButton;
+    }
+
+    public JButton getClearButton() {
+        return clearButton;
+    }
+
+    public JButton getSaveInputTextButton() {
+        return saveInputTextButton;
+    }
+
+    public JButton getSaveOutputTextButton() {
+        return saveOutputTextButton;
+    }
+
+    public JTextField getInputFileField() {
+        return inputFileField;
+    }
+
+    public JTextField getOutputFileField() {
+        return outputFileField;
+    }
+
+    public JButton getBrowseInputFileButton() {
+        return browseInputFileButton;
+    }
+
+    public JButton getEncryptFileButton() {
+        return encryptFileButton;
+    }
+
+    public JButton getDecryptFileButton() {
+        return decryptFileButton;
+    }
 
     public void showOptions(String key) {
         ((CardLayout) optionCards.getLayout()).show(optionCards, key);
         currentView = keyViews.get(key);
     }
 
-    public String getKeyBase64()  { return currentView == null ? "" : currentView.getKeyBase64(); }
-    public int    getKeySize()    { return currentView == null ? 0  : currentView.getSelectedKeySize(); }
-    public String getMode()    { return currentView instanceof BlockKeyView b ? b.getMode()    : ""; }
-    public String getPadding() { return currentView instanceof BlockKeyView b ? b.getPadding() : ""; }
+    public String getKeyBase64() {
+        return currentView == null ? "" : currentView.getKeyBase64();
+    }
+
+    public int getKeySize() {
+        return currentView == null ? 0 : currentView.getSelectedKeySize();
+    }
+
+    public String getMode() {
+        return currentView instanceof BlockKeyView b ? b.getMode() : "";
+    }
+
+    public String getPadding() {
+        return currentView instanceof BlockKeyView b ? b.getPadding() : "";
+    }
 
     public void setKeyBase64(String key) {
         if (currentView != null) currentView.setKeyBase64(key);
@@ -165,7 +236,7 @@ public class SymmetricPanel extends JPanel {
 
         JPanel grid = new JPanel(new GridLayout(2, 1, 8, 8));
         grid.setOpaque(false);
-        grid.add(PanelUtils.field("Input file",  PanelUtils.fileRow(inputFileField,  browseInputFileButton)));
+        grid.add(PanelUtils.field("Input file", PanelUtils.fileRow(inputFileField, browseInputFileButton)));
         grid.add(PanelUtils.field("Output file", outputFileField));
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -173,25 +244,28 @@ public class SymmetricPanel extends JPanel {
         actions.add(encryptFileButton);
         actions.add(decryptFileButton);
 
-        p.add(title,   BorderLayout.NORTH);
-        p.add(grid,    BorderLayout.CENTER);
+        p.add(title, BorderLayout.NORTH);
+        p.add(grid, BorderLayout.CENTER);
         p.add(actions, BorderLayout.SOUTH);
         return p;
     }
 
     private interface KeyView {
         JPanel getPanel();
+
         String getKeyBase64();
-        void   setKeyBase64(String key);
-        int    getSelectedKeySize();
+
+        void setKeyBase64(String key);
+
+        int getSelectedKeySize();
     }
 
     private static final class BlockKeyView implements KeyView {
-        private final JPanel             panel      = new JPanel(new BorderLayout(0, 8));
+        private final JPanel panel = new JPanel(new BorderLayout(0, 8));
         private final JComboBox<Integer> keySizeBox;
-        private final JComboBox<String>  modeBox;
-        private final JComboBox<String>  paddingBox;
-        private final JTextField         keyField   = new JTextField();
+        private final JComboBox<String> modeBox;
+        private final JComboBox<String> paddingBox;
+        private final JTextField keyField = new JTextField();
 
         private BlockKeyView(int[] keySizes, String[] modes, String[] paddings) {
             panel.setOpaque(false);
@@ -202,25 +276,38 @@ public class SymmetricPanel extends JPanel {
             keySizeBox = new JComboBox<>(sizes);
             if (sizes.length > 0) keySizeBox.setSelectedIndex(0);
 
-            modeBox    = new JComboBox<>(modes);
+            modeBox = new JComboBox<>(modes);
             paddingBox = new JComboBox<>(paddings);
             modeBox.addActionListener(e -> syncPaddingVisibility());
 
             JPanel grid = new JPanel(new GridLayout(2, 2, 10, 10));
             grid.setOpaque(false);
             grid.add(PanelUtils.field("Key size", keySizeBox));
-            grid.add(PanelUtils.field("Mode",            modeBox));
-            grid.add(PanelUtils.field("Padding",         paddingBox));
-            grid.add(PanelUtils.field("Key",    keyField));
+            grid.add(PanelUtils.field("Mode", modeBox));
+            grid.add(PanelUtils.field("Padding", paddingBox));
+            grid.add(PanelUtils.field("Key", keyField));
             panel.add(grid, BorderLayout.CENTER);
 
             syncPaddingVisibility();
         }
 
-        @Override public JPanel  getPanel()       { return panel; }
-        @Override public String  getKeyBase64()   { return keyField.getText().trim(); }
-        @Override public void    setKeyBase64(String k) { keyField.setText(k == null ? "" : k.trim()); }
-        @Override public int     getSelectedKeySize() {
+        @Override
+        public JPanel getPanel() {
+            return panel;
+        }
+
+        @Override
+        public String getKeyBase64() {
+            return keyField.getText().trim();
+        }
+
+        @Override
+        public void setKeyBase64(String k) {
+            keyField.setText(k == null ? "" : k.trim());
+        }
+
+        @Override
+        public int getSelectedKeySize() {
             Integer v = (Integer) keySizeBox.getSelectedItem();
             return v == null ? 0 : v;
         }
@@ -236,17 +323,16 @@ public class SymmetricPanel extends JPanel {
         }
 
         private void syncPaddingVisibility() {
-            String m = getMode();
-            boolean fixed = "CTR".equalsIgnoreCase(m) || "CTS".equalsIgnoreCase(m);
+            boolean fixed = "CTR".equalsIgnoreCase(getMode());
             paddingBox.setEnabled(!fixed);
             if (fixed) paddingBox.setSelectedItem("NoPadding");
         }
     }
 
     private static final class StreamKeyView implements KeyView {
-        private final JPanel             panel      = new JPanel(new BorderLayout(0, 8));
+        private final JPanel panel = new JPanel(new BorderLayout(0, 8));
         private final JComboBox<Integer> keySizeBox;
-        private final JTextField         keyField   = new JTextField();
+        private final JTextField keyField = new JTextField();
 
         private StreamKeyView(int[] keySizes) {
             panel.setOpaque(false);
@@ -260,14 +346,27 @@ public class SymmetricPanel extends JPanel {
             JPanel grid = new JPanel(new GridLayout(1, 2, 10, 10));
             grid.setOpaque(false);
             grid.add(PanelUtils.field("Key size", keySizeBox));
-            grid.add(PanelUtils.field("Key",      keyField));
+            grid.add(PanelUtils.field("Key", keyField));
             panel.add(grid, BorderLayout.NORTH);
         }
 
-        @Override public JPanel  getPanel()       { return panel; }
-        @Override public String  getKeyBase64()   { return keyField.getText().trim(); }
-        @Override public void    setKeyBase64(String k) { keyField.setText(k == null ? "" : k.trim()); }
-        @Override public int     getSelectedKeySize() {
+        @Override
+        public JPanel getPanel() {
+            return panel;
+        }
+
+        @Override
+        public String getKeyBase64() {
+            return keyField.getText().trim();
+        }
+
+        @Override
+        public void setKeyBase64(String k) {
+            keyField.setText(k == null ? "" : k.trim());
+        }
+
+        @Override
+        public int getSelectedKeySize() {
             Integer v = (Integer) keySizeBox.getSelectedItem();
             return v == null ? 0 : v;
         }

@@ -255,10 +255,10 @@ public class AsymmetricController {
     }
 
     private String currentKeyText() {
-        String publicKey  = panel.getPublicKey();
+        String publicKey = panel.getPublicKey();
         String privateKey = panel.getPrivateKey();
         if (publicKey.isBlank() && privateKey.isBlank()) return "";
-        if (publicKey.isBlank())  return privateKey;
+        if (publicKey.isBlank()) return privateKey;
         if (privateKey.isBlank()) return publicKey;
         return publicKey + System.lineSeparator() + privateKey;
     }
