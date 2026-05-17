@@ -43,7 +43,6 @@ public class HillAlgorithm implements ClassicAlgorithm {
         }
     }
 
-
     private String handle(String input, int[] key, boolean encrypt, String alphabet) {
         if (input == null) {
             return "";
@@ -65,7 +64,7 @@ public class HillAlgorithm implements ClassicAlgorithm {
 
         if (values.size() % 2 != 0) {
             if (!encrypt) {
-                throw new IllegalArgumentException("Ciphertext Hill phai co so ky tu hop le la chan.");
+                throw new IllegalArgumentException("Ciphertext Hill phai co so ky tu hop le la so chan.");
             }
             positions.add(-1);
             values.add(0);
@@ -115,11 +114,11 @@ public class HillAlgorithm implements ClassicAlgorithm {
 
     private int[] parseKey(String key) {
         if (key == null) {
-            throw new IllegalArgumentException("Key must not be null");
+            throw new IllegalArgumentException("Key khong duoc de trong");
         }
         String[] parts = key.trim().split("[,\\s]+");
         if (parts.length != 4) {
-            throw new IllegalArgumentException("Hill key must have 4 numbers");
+            throw new IllegalArgumentException("Key phai co 4 so nguyen");
         }
         int[] result = new int[4];
         for (int i = 0; i < parts.length; i++) {
@@ -139,7 +138,7 @@ public class HillAlgorithm implements ClassicAlgorithm {
                 return x;
             }
         }
-        throw new IllegalArgumentException("No modular inverse");
+        throw new IllegalArgumentException("Khong ton tai nghich dao modular");
     }
 
     private int gcd(int a, int b) {

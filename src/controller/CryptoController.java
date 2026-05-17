@@ -27,4 +27,3 @@ public class CryptoController {
         return tabs;
     }
 }
-

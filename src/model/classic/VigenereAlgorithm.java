@@ -51,7 +51,7 @@ public class VigenereAlgorithm implements ClassicAlgorithm {
             return "";
         }
         if (key == null || key.trim().isEmpty()) {
-            throw new IllegalArgumentException("Key must not be empty");
+            throw new IllegalArgumentException("Key khong duoc de trong");
         }
         int n = alphabet.length();
         StringBuilder sb = new StringBuilder(input.length());
@@ -70,4 +70,3 @@ public class VigenereAlgorithm implements ClassicAlgorithm {
         return sb.toString();
     }
 }
-

@@ -8,6 +8,7 @@ import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public final class ControllerUtils {
     private ControllerUtils() {
@@ -76,26 +77,57 @@ public final class ControllerUtils {
         return null;
     }
 
-    public static String chooseSaveFile(Component parent, String defaultName) {
-        JFileChooser chooser = new JFileChooser();
-        if (defaultName != null && !defaultName.isBlank()) {
-            chooser.setSelectedFile(new File(defaultName));
+    public static void selectOpenFileTo(Component parent, JTextField target) {
+        String path = chooseOpenFile(parent);
+        if (path != null) {
+            target.setText(path);
         }
-        if (chooser.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) {
-            return chooser.getSelectedFile().getAbsolutePath();
-        }
-        return null;
     }
 
-    public static boolean requireFilePaths(MainFrame frame, String inputPath, String outputPath) {
-        if (inputPath == null || inputPath.isBlank()) {
-            frame.showMessage("Thieu du lieu", "Vui long chon input file.");
-            return false;
+    public static void runWorker(JComponent parent, JTextArea outputArea, Callable<String> worker) {
+        SwingWorker<String, Void> swingWorker = new SwingWorker<>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                return worker.call();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    outputArea.setText(get());
+                } catch (Exception ex) {
+                    outputArea.setText("");
+                    JOptionPane.showMessageDialog(parent, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        swingWorker.execute();
+    }
+
+    public static void runFileWorker(JComponent parent, JTextField outputField, Callable<String> worker) {
+        SwingWorker<String, Void> swingWorker = new SwingWorker<>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                return worker.call();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    outputField.setText(get());
+                } catch (Exception ex) {
+                    outputField.setText("");
+                    JOptionPane.showMessageDialog(parent, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        swingWorker.execute();
+    }
+
+    public static void importTextTo(Component parent, MainFrame frame, JTextArea target) {
+        String content = openText(parent, frame);
+        if (content != null) {
+            target.setText(content);
         }
-        if (outputPath == null || outputPath.isBlank()) {
-            frame.showMessage("Thieu du lieu", "Vui long chon output file.");
-            return false;
-        }
-        return true;
     }
 }

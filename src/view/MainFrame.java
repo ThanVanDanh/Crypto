@@ -15,14 +15,9 @@ public class MainFrame extends JFrame {
         setMinimumSize(new Dimension(900, 525));
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
-        add(buildTabs(), BorderLayout.CENTER);
-    }
-
-    private JComponent buildTabs() {
         tabbedPane.setBorder(new EmptyBorder(10, 10, 10, 10));
-        return tabbedPane;
+        add(tabbedPane, BorderLayout.CENTER);
     }
-
 
     public void setTabs(Map<String, JComponent> tabs) {
         tabbedPane.removeAll();
@@ -34,9 +29,4 @@ public class MainFrame extends JFrame {
     public void showMessage(String title, String message) {
         JOptionPane.showMessageDialog(this, message, title, JOptionPane.INFORMATION_MESSAGE);
     }
-
-    public JTabbedPane getTabbedPane() {
-        return tabbedPane;
-    }
-
 }

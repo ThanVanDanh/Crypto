@@ -2,27 +2,21 @@ package model.classic;
 
 import common.AlphabetConstants;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 public class AffineAlgorithm implements ClassicAlgorithm {
-    public int[] genKey(int n) {
-        Random rand = new Random();
-        int a;
-        do {
-            a = rand.nextInt(n - 1) + 1;
-        } while (gcd(a, n) != 1);
-
-        int b = rand.nextInt(n);
-
-        return new int[] { a, b };
-    }
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     @Override
     public String genKey(boolean isVN) {
-        int[] key = genKey(alphabetFor(isVN).length());
-        return key[0] + " " + key[1];
+        int n = alphabetFor(isVN).length();
+        int a;
+        do {
+            a = RANDOM.nextInt(n - 1) + 1;
+        } while (gcd(a, n) != 1);
+        int b = RANDOM.nextInt(n);
+        return a + " " + b;
     }
-
     @Override
     public boolean isValidKey(String key, boolean isVN) {
         try {
@@ -37,7 +31,6 @@ public class AffineAlgorithm implements ClassicAlgorithm {
             return false;
         }
     }
-
 
     @Override
     public String encrypt(String text, String key, boolean isVN) {
@@ -63,7 +56,6 @@ public class AffineAlgorithm implements ClassicAlgorithm {
             int idx = alphabet.indexOf(c);
             if (idx >= 0) {
                 int result;
-
                 if (encrypt) {
                     result = (a * idx + b) % m;
                 } else {
@@ -83,19 +75,9 @@ public class AffineAlgorithm implements ClassicAlgorithm {
     private int[] parseKey(String key) {
         String[] parts = key.trim().split("[,\\s]+");
         if (parts.length != 2) {
-            throw new IllegalArgumentException("Affine key must have 2 numbers");
+            throw new IllegalArgumentException("Key Affine phai co 2 so nguyen");
         }
-        String part1 = parts[0].trim();
-        String part2 = parts[1].trim();
-
-        int a = Integer.parseInt(part1);
-        int b = Integer.parseInt(part2);
-
-        int[] result = new int[2];
-        result[0] = a;
-        result[1] = b;
-
-        return result;
+        return new int[]{ Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()) };
     }
 
     private int modInverse(int a, int m) {
@@ -108,7 +90,7 @@ public class AffineAlgorithm implements ClassicAlgorithm {
                 return x;
             }
         }
-        throw new IllegalArgumentException("Khong co nghich dao mod " + m + " cua " + a);
+        throw new IllegalArgumentException("Khong ton tai nghich dao mod " + m + " cua " + a);
     }
 
     private int gcd(int a, int b) {

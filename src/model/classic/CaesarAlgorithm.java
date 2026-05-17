@@ -54,13 +54,9 @@ public class CaesarAlgorithm implements ClassicAlgorithm {
     }
 
     private int parseKey(String key) {
-        if (key == null) {
-            throw new IllegalArgumentException("Key must not be null");
+        if (key == null || key.trim().isEmpty()) {
+            throw new IllegalArgumentException("Key khong duoc de trong");
         }
-        String trimmed = key.trim();
-        if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("Key must not be empty");
-        }
-        return Integer.parseInt(trimmed);
+        return Integer.parseInt(key.trim());
     }
 }

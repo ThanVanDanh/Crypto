@@ -11,13 +11,10 @@ import model.classic.VigenereAlgorithm;
 import view.MainFrame;
 import view.panel.ClassicPanel;
 
-import javax.swing.*;
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 public class ClassicController {
     private final MainFrame frame;
@@ -49,8 +46,9 @@ public class ClassicController {
         panel.getSaveKeyButton().addActionListener(e -> onSaveKey());
         panel.getImportKeyButton().addActionListener(e -> onImportKey());
         panel.getClearButton().addActionListener(e -> onClear());
-        panel.getSaveInputTextButton().addActionListener(e -> onImportInput());
-        panel.getSaveOutputTextButton().addActionListener(e -> onSaveText("classic-output.txt", panel.getOutputArea().getText()));
+        panel.getSaveInputTextButton().addActionListener(e -> ControllerUtils.importTextTo(panel, frame, panel.getInputArea()));
+        panel.getSaveOutputTextButton().addActionListener(e ->
+                ControllerUtils.saveText(panel, frame, "classic-output.txt", panel.getOutputArea().getText(), "Khong co noi dung de luu."));
         panel.getAlgorithmList().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 AlgorithmItem item = panel.getAlgorithmList().getSelectedValue();
@@ -75,7 +73,7 @@ public class ClassicController {
             return;
         }
         String key = panel.getKey();
-        runWorker(() -> algorithm.encrypt(input, key, isVietnamese()));
+        ControllerUtils.runWorker(panel, panel.getOutputArea(), () -> algorithm.encrypt(input, key, isVietnamese()));
     }
 
     private void onSecondary() {
@@ -88,7 +86,7 @@ public class ClassicController {
             return;
         }
         String key = panel.getKey();
-        runWorker(() -> algorithm.decrypt(input, key, isVietnamese()));
+        ControllerUtils.runWorker(panel, panel.getOutputArea(), () -> algorithm.decrypt(input, key, isVietnamese()));
     }
 
     private void onGenerate() {
@@ -96,12 +94,12 @@ public class ClassicController {
     }
 
     private void onCopyKey() {
-        ControllerUtils.copyText(frame, currentKeyText(), "Vui long nhap hoac tao key truoc.");
+        ControllerUtils.copyText(frame, panel.getKey(), "Vui long nhap hoac tao key truoc.");
     }
 
     private void onSaveKey() {
         ControllerUtils.saveText(panel, frame, selected.getKey() + "-key.txt",
-                currentKeyText(), "Vui long nhap hoac tao key truoc.");
+                panel.getKey(), "Vui long nhap hoac tao key truoc.");
     }
 
     private void onImportKey() {
@@ -116,17 +114,6 @@ public class ClassicController {
         panel.setKey(content.trim());
     }
 
-    private void onSaveText(String defaultName, String content) {
-        ControllerUtils.saveText(panel, frame, defaultName, content, "Khong co noi dung de luu.");
-    }
-
-    private void onImportInput() {
-        String content = ControllerUtils.openText(panel, frame);
-        if (content != null) {
-            panel.getInputArea().setText(content);
-        }
-    }
-
     private void onClear() {
         panel.getInputArea().setText("");
         panel.getOutputArea().setText("");
@@ -135,10 +122,6 @@ public class ClassicController {
     private void selectAlgorithm(AlgorithmItem item) {
         selected = item;
         panel.showOptions(item.getKey());
-        updateButtonLabels();
-    }
-
-    private void updateButtonLabels() {
         panel.getPrimaryButton().setText("Encrypt");
         panel.getSecondaryButton().setText("Decrypt");
         panel.getGenerateButton().setText("Generate key");
@@ -177,30 +160,6 @@ public class ClassicController {
         }
         frame.showMessage("Thieu du lieu", message);
         return false;
-    }
-
-    private String currentKeyText() {
-        return panel.getKey();
-    }
-
-    private void runWorker(Callable<String> worker) {
-        SwingWorker<String, Void> swingWorker = new SwingWorker<>() {
-            @Override
-            protected String doInBackground() throws Exception {
-                return worker.call();
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    panel.getOutputArea().setText(get());
-                } catch (Exception ex) {
-                    panel.getOutputArea().setText("");
-                    JOptionPane.showMessageDialog(panel, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        };
-        swingWorker.execute();
     }
 
     private void addClassicAlgorithm(List<AlgorithmItem> items,

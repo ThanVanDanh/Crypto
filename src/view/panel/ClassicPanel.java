@@ -28,7 +28,6 @@ public class ClassicPanel extends JPanel {
     private final JButton saveInputTextButton = new JButton("Import input");
     private final JButton saveOutputTextButton = new JButton("Save output");
     private final JComboBox<String> languageBox = new JComboBox<>(new String[]{"ENG", "VIE"});
-    private final JLabel optionTitleLabel = new JLabel("Option Deck");
     private final Map<String, KeyAccessor> keyPanels = new LinkedHashMap<>();
     private KeyAccessor currentKeyPanel;
 
@@ -47,7 +46,7 @@ public class ClassicPanel extends JPanel {
         algorithmList.setListData(items.toArray(new AlgorithmItem[0]));
         algorithmList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        JPanel side = card(new BorderLayout(0, 10));
+        JPanel side = PanelUtils.card(new BorderLayout(0, 10));
         side.setPreferredSize(new Dimension(240, 0));
         JLabel label = new JLabel("Algorithms");
         label.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -62,7 +61,8 @@ public class ClassicPanel extends JPanel {
 
         JPanel body = new JPanel(new BorderLayout(0, 12));
         JPanel workspace = new JPanel(new BorderLayout(0, 12));
-        JPanel optionDeck = card(new BorderLayout(0, 10));
+        JPanel optionDeck = PanelUtils.card(new BorderLayout(0, 10));
+        JLabel optionTitleLabel = new JLabel("Option Deck");
         optionTitleLabel.setFont(optionTitleLabel.getFont().deriveFont(Font.BOLD, 14f));
         optionDeck.add(optionTitleLabel, BorderLayout.NORTH);
         optionDeck.add(optionCards, BorderLayout.CENTER);
@@ -78,16 +78,16 @@ public class ClassicPanel extends JPanel {
 
         gbc.gridx = 0;
         gbc.weightx = 1.0;
-        split.add(editorCard("Input", inputArea, saveInputTextButton), gbc);
+        split.add(PanelUtils.editorCard("Input", inputArea, saveInputTextButton), gbc);
 
         Dimension buttonSize = new Dimension(120, 28);
         JPanel splitOption = new JPanel();
         splitOption.setOpaque(false);
         splitOption.setLayout(new BoxLayout(splitOption, BoxLayout.Y_AXIS));
-        configureButton(primaryButton, buttonSize);
-        configureButton(secondaryButton, buttonSize);
-        configureButton(generateButton, buttonSize);
-        configureButton(clearButton, buttonSize);
+        PanelUtils.configureButton(primaryButton, buttonSize);
+        PanelUtils.configureButton(secondaryButton, buttonSize);
+        PanelUtils.configureButton(generateButton, buttonSize);
+        PanelUtils.configureButton(clearButton, buttonSize);
         splitOption.add(primaryButton);
         splitOption.add(Box.createVerticalStrut(8));
         splitOption.add(secondaryButton);
@@ -103,7 +103,7 @@ public class ClassicPanel extends JPanel {
         gbc.gridx = 2;
         gbc.weightx = 1.0;
         gbc.insets = new Insets(0, 12, 0, 0);
-        split.add(editorCard("Output", outputArea, saveOutputTextButton), gbc);
+        split.add(PanelUtils.editorCard("Output", outputArea, saveOutputTextButton), gbc);
 
         workspace.add(split, BorderLayout.CENTER);
         body.add(workspace, BorderLayout.CENTER);
@@ -188,7 +188,7 @@ public class ClassicPanel extends JPanel {
         caesarPanel.setBorder(new EmptyBorder(2, 2, 2, 2));
         JPanel caesarGrid = new JPanel(new GridLayout(1, 1, 10, 10));
         caesarGrid.setOpaque(false);
-        caesarGrid.add(field("Key", caesarField));
+        caesarGrid.add(PanelUtils.field("Key", caesarField));
         caesarPanel.add(caesarGrid, BorderLayout.CENTER);
         addKeyPanel("caesar", caesarPanel, () -> caesarField.getText().trim(), key -> caesarField.setText(key == null ? "" : key.trim()));
 
@@ -199,8 +199,8 @@ public class ClassicPanel extends JPanel {
         affinePanel.setBorder(new EmptyBorder(2, 2, 2, 2));
         JPanel affineGrid = new JPanel(new GridLayout(1, 2, 10, 10));
         affineGrid.setOpaque(false);
-        affineGrid.add(field("a", affineA));
-        affineGrid.add(field("b", affineB));
+        affineGrid.add(PanelUtils.field("a", affineA));
+        affineGrid.add(PanelUtils.field("b", affineB));
         affinePanel.add(affineGrid, BorderLayout.CENTER);
         addKeyPanel("affine", affinePanel, () -> {
             String a = affineA.getText().trim();
@@ -226,7 +226,7 @@ public class ClassicPanel extends JPanel {
         hillPanel.setBorder(new EmptyBorder(2, 2, 2, 2));
         JPanel hillGrid = new JPanel(new GridLayout(1, 1, 10, 10));
         hillGrid.setOpaque(false);
-        hillGrid.add(field("Matrix 2x2", hillField));
+        hillGrid.add(PanelUtils.field("Matrix 2x2", hillField));
         hillPanel.add(hillGrid, BorderLayout.CENTER);
         addKeyPanel("hill", hillPanel, () -> hillField.getText().trim(), key -> hillField.setText(key == null ? "" : key.trim()));
 
@@ -237,7 +237,7 @@ public class ClassicPanel extends JPanel {
         JPanel substitutionPanel = new JPanel(new BorderLayout(0, 8));
         substitutionPanel.setOpaque(false);
         substitutionPanel.setBorder(new EmptyBorder(2, 2, 2, 2));
-        substitutionPanel.add(field("Alphabet permutation", new JScrollPane(substitutionArea)), BorderLayout.CENTER);
+        substitutionPanel.add(PanelUtils.field("Alphabet permutation", new JScrollPane(substitutionArea)), BorderLayout.CENTER);
         addKeyPanel("substitution", substitutionPanel,
                 () -> substitutionArea.getText().trim(),
                 key -> substitutionArea.setText(key == null ? "" : key.trim()));
@@ -248,7 +248,7 @@ public class ClassicPanel extends JPanel {
         vigenerePanel.setBorder(new EmptyBorder(2, 2, 2, 2));
         JPanel vigenereGrid = new JPanel(new GridLayout(1, 1, 10, 10));
         vigenereGrid.setOpaque(false);
-        vigenereGrid.add(field("Key", vigenereField));
+        vigenereGrid.add(PanelUtils.field("Key", vigenereField));
         vigenerePanel.add(vigenereGrid, BorderLayout.CENTER);
         addKeyPanel("vigenere", vigenerePanel, () -> vigenereField.getText().trim(), key -> vigenereField.setText(key == null ? "" : key.trim()));
     }
@@ -262,10 +262,6 @@ public class ClassicPanel extends JPanel {
         optionCards.add(panel, algorithmKey);
     }
 
-    private JPanel editorCard(String title, JTextArea area, JButton saveButton) {
-        return PanelUtils.editorCard(title, area, saveButton);
-    }
-
     private JPanel keyActionPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         panel.setOpaque(false);
@@ -273,18 +269,6 @@ public class ClassicPanel extends JPanel {
         panel.add(saveKeyButton);
         panel.add(importKeyButton);
         return panel;
-    }
-
-    private JPanel field(String label, JComponent component) {
-        return PanelUtils.field(label, component);
-    }
-
-    private void configureButton(JButton button, Dimension size) {
-        PanelUtils.configureButton(button, size);
-    }
-
-    private JPanel card(LayoutManager layout) {
-        return PanelUtils.card(layout);
     }
 
     private static final class KeyAccessor {

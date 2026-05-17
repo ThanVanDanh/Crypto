@@ -27,7 +27,6 @@ public class AsymmetricPanel extends JPanel {
     private final JTextField inputFileField = new JTextField();
     private final JTextField outputFileField = new JTextField();
     private final JButton browseInputFileButton = new JButton("Browse");
-    private final JButton browseOutputFileButton = new JButton("Browse");
     private final JButton encryptFileButton = new JButton("Encrypt file");
     private final JButton decryptFileButton = new JButton("Decrypt file");
     private final JLabel optionTitleLabel = new JLabel("Key Options");
@@ -47,7 +46,7 @@ public class AsymmetricPanel extends JPanel {
         algorithmList.setListData(items.toArray(new AlgorithmItem[0]));
         algorithmList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        JPanel side = card(new BorderLayout(0, 10));
+        JPanel side = PanelUtils.card(new BorderLayout(0, 10));
         side.setPreferredSize(new Dimension(240, 0));
         JLabel label = new JLabel("Algorithms");
         label.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -61,7 +60,7 @@ public class AsymmetricPanel extends JPanel {
 
         JPanel body = new JPanel(new BorderLayout(0, 12));
         JPanel workspace = new JPanel(new BorderLayout(0, 12));
-        JPanel optionDeck = card(new BorderLayout(0, 10));
+        JPanel optionDeck = PanelUtils.card(new BorderLayout(0, 10));
         optionTitleLabel.setFont(optionTitleLabel.getFont().deriveFont(Font.BOLD, 14f));
         optionDeck.add(optionTitleLabel, BorderLayout.NORTH);
         optionDeck.add(optionCards, BorderLayout.CENTER);
@@ -77,16 +76,16 @@ public class AsymmetricPanel extends JPanel {
 
         gbc.gridx = 0;
         gbc.weightx = 1.0;
-        split.add(editorCard("Input", inputArea, saveInputTextButton), gbc);
+        split.add(PanelUtils.editorCard("Input", inputArea, saveInputTextButton), gbc);
 
         Dimension buttonSize = new Dimension(120, 28);
         JPanel splitOption = new JPanel();
         splitOption.setOpaque(false);
         splitOption.setLayout(new BoxLayout(splitOption, BoxLayout.Y_AXIS));
-        configureButton(primaryButton, buttonSize);
-        configureButton(secondaryButton, buttonSize);
-        configureButton(generateButton, buttonSize);
-        configureButton(clearButton, buttonSize);
+        PanelUtils.configureButton(primaryButton, buttonSize);
+        PanelUtils.configureButton(secondaryButton, buttonSize);
+        PanelUtils.configureButton(generateButton, buttonSize);
+        PanelUtils.configureButton(clearButton, buttonSize);
         splitOption.add(primaryButton);
         splitOption.add(Box.createVerticalStrut(8));
         splitOption.add(secondaryButton);
@@ -102,7 +101,7 @@ public class AsymmetricPanel extends JPanel {
         gbc.gridx = 2;
         gbc.weightx = 1.0;
         gbc.insets = new Insets(0, 12, 0, 0);
-        split.add(editorCard("Output", outputArea, saveOutputTextButton), gbc);
+        split.add(PanelUtils.editorCard("Output", outputArea, saveOutputTextButton), gbc);
 
         workspace.add(split, BorderLayout.CENTER);
         workspace.add(filePanel(), BorderLayout.SOUTH);
@@ -172,10 +171,6 @@ public class AsymmetricPanel extends JPanel {
         return browseInputFileButton;
     }
 
-    public JButton getBrowseOutputFileButton() {
-        return browseOutputFileButton;
-    }
-
     public JButton getEncryptFileButton() {
         return encryptFileButton;
     }
@@ -184,7 +179,7 @@ public class AsymmetricPanel extends JPanel {
         return decryptFileButton;
     }
 
-    public int getKeySizeBits() {
+    public int getKeySize() {
         return keyPanel.getSelectedKeySize();
     }
 
@@ -193,24 +188,20 @@ public class AsymmetricPanel extends JPanel {
         cl.show(optionCards, algorithmKey);
     }
 
-    public String getPublicKeyBase64() {
-        return keyPanel.getPublicKeyBase64();
+    public String getPublicKey() {
+        return keyPanel.getPublicKey();
     }
 
-    public String getPrivateKeyBase64() {
-        return keyPanel.getPrivateKeyBase64();
+    public String getPrivateKey() {
+        return keyPanel.getPrivateKey();
     }
 
-    public void setPublicKeyBase64(String key) {
-        keyPanel.setPublicKeyBase64(key);
+    public void setPublicKey(String key) {
+        keyPanel.setPublicKey(key);
     }
 
-    public void setPrivateKeyBase64(String key) {
-        keyPanel.setPrivateKeyBase64(key);
-    }
-
-    private JPanel editorCard(String title, JTextArea area, JButton saveButton) {
-        return PanelUtils.editorCard(title, area, saveButton);
+    public void setPrivateKey(String key) {
+        keyPanel.setPrivateKey(key);
     }
 
     private JPanel keyActionPanel() {
@@ -223,7 +214,7 @@ public class AsymmetricPanel extends JPanel {
     }
 
     private JPanel filePanel() {
-        JPanel panel = card(new BorderLayout(0, 8));
+        JPanel panel = PanelUtils.card(new BorderLayout(0, 8));
         JLabel title = new JLabel("File");
         title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
 
@@ -232,30 +223,18 @@ public class AsymmetricPanel extends JPanel {
 
         JPanel grid = new JPanel(new GridLayout(2, 1, 8, 8));
         grid.setOpaque(false);
-        grid.add(field("Input file", PanelUtils.fileRow(inputFileField, browseInputFileButton)));
-        grid.add(field("Output file", PanelUtils.fileRow(outputFileField, browseOutputFileButton)));
+        grid.add(PanelUtils.field("Input file",  PanelUtils.fileRow(inputFileField, browseInputFileButton)));
+        grid.add(PanelUtils.field("Output file", outputFileField));
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actions.setOpaque(false);
         actions.add(encryptFileButton);
         actions.add(decryptFileButton);
 
-        panel.add(title, BorderLayout.NORTH);
-        panel.add(grid, BorderLayout.CENTER);
+        panel.add(title,   BorderLayout.NORTH);
+        panel.add(grid,    BorderLayout.CENTER);
         panel.add(actions, BorderLayout.SOUTH);
         return panel;
-    }
-
-    private JPanel field(String label, JComponent component) {
-        return PanelUtils.field(label, component);
-    }
-
-    private void configureButton(JButton button, Dimension size) {
-        PanelUtils.configureButton(button, size);
-    }
-
-    private JPanel card(LayoutManager layout) {
-        return PanelUtils.card(layout);
     }
 
     private static final class RsaKeyView {
@@ -282,12 +261,12 @@ public class AsymmetricPanel extends JPanel {
 
             JPanel top = new JPanel(new GridLayout(1, 2, 10, 10));
             top.setOpaque(false);
-            top.add(field("Key size (bits)", keySizeBox));
-            top.add(field("Public key (Base64)", new JScrollPane(publicKeyArea)));
+            top.add(PanelUtils.field("Key size", keySizeBox));
+            top.add(PanelUtils.field("Public key", new JScrollPane(publicKeyArea)));
 
             JPanel bottom = new JPanel(new GridLayout(1, 1, 10, 10));
             bottom.setOpaque(false);
-            bottom.add(field("Private key (Base64)", new JScrollPane(privateKeyArea)));
+            bottom.add(PanelUtils.field("Private key", new JScrollPane(privateKeyArea)));
 
             panel.add(top, BorderLayout.NORTH);
             panel.add(bottom, BorderLayout.CENTER);
@@ -302,24 +281,20 @@ public class AsymmetricPanel extends JPanel {
             return value == null ? 0 : value;
         }
 
-        public String getPublicKeyBase64() {
+        public String getPublicKey() {
             return publicKeyArea.getText().trim();
         }
 
-        public void setPublicKeyBase64(String key) {
+        public void setPublicKey(String key) {
             publicKeyArea.setText(key == null ? "" : key.trim());
         }
 
-        public String getPrivateKeyBase64() {
+        public String getPrivateKey() {
             return privateKeyArea.getText().trim();
         }
 
-        public void setPrivateKeyBase64(String key) {
+        public void setPrivateKey(String key) {
             privateKeyArea.setText(key == null ? "" : key.trim());
-        }
-
-        private JPanel field(String label, JComponent component) {
-            return PanelUtils.field(label, component);
         }
     }
 }

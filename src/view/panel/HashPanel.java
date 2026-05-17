@@ -15,8 +15,6 @@ public class HashPanel extends JPanel {
     private final JTextArea inputArea = new JTextArea();
     private final JTextArea outputArea = new JTextArea();
     private final JButton primaryButton = new JButton("Primary");
-    private final JButton secondaryButton = new JButton("Secondary");
-    private final JButton generateButton = new JButton("Generate");
     private final JButton clearButton = new JButton("Clear");
     private final JButton saveInputTextButton = new JButton("Import input");
     private final JButton saveOutputTextButton = new JButton("Save output");
@@ -38,7 +36,7 @@ public class HashPanel extends JPanel {
         algorithmList.setListData(items.toArray(new AlgorithmItem[0]));
         algorithmList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        JPanel side = card(new BorderLayout(0, 10));
+        JPanel side = PanelUtils.card(new BorderLayout(0, 10));
         side.setPreferredSize(new Dimension(240, 0));
         JLabel label = new JLabel("Algorithms");
         label.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -61,14 +59,14 @@ public class HashPanel extends JPanel {
 
         gbc.gridx = 0;
         gbc.weightx = 1.0;
-        split.add(editorCard("Input", inputArea, saveInputTextButton), gbc);
+        split.add(PanelUtils.editorCard("Input", inputArea, saveInputTextButton), gbc);
 
         Dimension buttonSize = new Dimension(120, 28);
         JPanel splitOption = new JPanel();
         splitOption.setOpaque(false);
         splitOption.setLayout(new BoxLayout(splitOption, BoxLayout.Y_AXIS));
-        configureButton(primaryButton, buttonSize);
-        configureButton(clearButton, buttonSize);
+        PanelUtils.configureButton(primaryButton, buttonSize);
+        PanelUtils.configureButton(clearButton, buttonSize);
         splitOption.add(primaryButton);
         splitOption.add(Box.createVerticalStrut(8));
         splitOption.add(clearButton);
@@ -80,7 +78,7 @@ public class HashPanel extends JPanel {
         gbc.gridx = 2;
         gbc.weightx = 1.0;
         gbc.insets = new Insets(0, 12, 0, 0);
-        split.add(editorCard("Output", outputArea, saveOutputTextButton), gbc);
+        split.add(PanelUtils.editorCard("Output", outputArea, saveOutputTextButton), gbc);
 
         workspace.add(split, BorderLayout.CENTER);
         workspace.add(filePanel(), BorderLayout.SOUTH);
@@ -103,14 +101,6 @@ public class HashPanel extends JPanel {
 
     public JButton getPrimaryButton() {
         return primaryButton;
-    }
-
-    public JButton getSecondaryButton() {
-        return secondaryButton;
-    }
-
-    public JButton getGenerateButton() {
-        return generateButton;
     }
 
     public JButton getClearButton() {
@@ -137,12 +127,8 @@ public class HashPanel extends JPanel {
         return hashFileButton;
     }
 
-    private JPanel editorCard(String title, JTextArea area, JButton saveButton) {
-        return PanelUtils.editorCard(title, area, saveButton);
-    }
-
     private JPanel filePanel() {
-        JPanel panel = card(new BorderLayout(0, 8));
+        JPanel panel = PanelUtils.card(new BorderLayout(0, 8));
         JLabel title = new JLabel("File");
         title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
 
@@ -150,7 +136,7 @@ public class HashPanel extends JPanel {
 
         JPanel grid = new JPanel(new GridLayout(1, 1, 8, 8));
         grid.setOpaque(false);
-        grid.add(field("Input file", PanelUtils.fileRow(inputFileField, browseInputFileButton)));
+        grid.add(PanelUtils.field("Input file", PanelUtils.fileRow(inputFileField, browseInputFileButton)));
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actions.setOpaque(false);
@@ -160,17 +146,5 @@ public class HashPanel extends JPanel {
         panel.add(grid, BorderLayout.CENTER);
         panel.add(actions, BorderLayout.SOUTH);
         return panel;
-    }
-
-    private JPanel field(String label, JComponent component) {
-        return PanelUtils.field(label, component);
-    }
-
-    private void configureButton(JButton button, Dimension size) {
-        PanelUtils.configureButton(button, size);
-    }
-
-    private JPanel card(LayoutManager layout) {
-        return PanelUtils.card(layout);
     }
 }

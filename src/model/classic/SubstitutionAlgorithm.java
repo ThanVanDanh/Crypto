@@ -56,7 +56,6 @@ public class SubstitutionAlgorithm implements ClassicAlgorithm {
         return true;
     }
 
-
     private String handleEncrypt(String input, String key, String alphabet) {
         if (input == null) {
             return "";
